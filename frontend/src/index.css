@@ -1,0 +1,28 @@
+/* Reset and basic styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Remove the default Vite styles that are causing layout issues */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Basic utility classes that might be needed */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Ensure the GlobalStyles component can inject its styles properly */
