@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
 // Register
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body;
   if (!username || !email || !password) {
     res.status(400).json({ message: 'All fields are required.' });
     return;
@@ -20,8 +20,13 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       res.status(409).json({ message: 'User already exists.' });
       return;
     }
+    
+    // Check if any admin exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    const role = adminExists ? 'student' : 'admin';
+    
     const hashed = await bcrypt.hash(password, 10);
-    await User.create({ username, email, password: hashed, role: role || 'student' });
+    await User.create({ username, email, password: hashed, role });
     res.status(201).json({ message: 'User registered successfully.' });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
@@ -65,6 +70,16 @@ router.get('/users', requireRole('admin'), async (req: Request, res: Response) =
     })));
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
+// Check if admin exists
+router.get('/check-admin', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminExists = await User.findOne({ role: 'admin' });
+    res.json({ adminExists: !!adminExists });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 

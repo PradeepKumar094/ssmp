@@ -15,17 +15,16 @@ interface User {
 
 const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    role: 'student' as 'admin' | 'student'
+    confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -61,8 +60,7 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
         const response = await axios.post('http://localhost:5000/api/auth/register', {
           username: formData.username,
           email: formData.email,
-          password: formData.password,
-          role: formData.role
+          password: formData.password
         });
 
         // Auto-login after successful registration
@@ -88,8 +86,7 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
       username: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      role: 'student'
+      confirmPassword: ''
     });
     setError('');
   };
@@ -268,70 +265,36 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
           </div>
 
           {!isLogin && (
-            <>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#374151',
-                  fontWeight: '600',
-                  fontSize: '14px'
-                }}>
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  placeholder="Confirm your password"
-                />
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  color: '#374151',
-                  fontWeight: '600',
-                  fontSize: '14px'
-                }}>
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    backgroundColor: 'white'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: '#374151',
+                fontWeight: '600',
+                fontSize: '14px'
+              }}>
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required={!isLogin}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                placeholder="Confirm your password"
+              />
+            </div>
           )}
 
           <button
