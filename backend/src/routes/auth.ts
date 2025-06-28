@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
-import { requireRole } from '../middleware/auth';
+import { requireRole, authenticate } from '../middleware/auth';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
@@ -80,6 +80,43 @@ router.get('/check-admin', async (req: Request, res: Response): Promise<void> =>
     res.json({ adminExists: !!adminExists });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Update user profile (username, password, avatar)
+router.put('/users/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    const { username, password, avatar } = req.body;
+    // Only allow user themselves or admin
+    if ((req.user.id + '') !== (userId + '') && req.user.role !== 'admin') {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+    const updateFields: any = {};
+    if (username) updateFields.username = username;
+    if (typeof avatar !== 'undefined') updateFields.avatar = avatar;
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      updateFields.password = hashed;
+    }
+    const updated = await User.findByIdAndUpdate(userId, updateFields, { new: true });
+    if (!updated) {
+      console.error('User not found or update failed for id:', userId);
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    // @ts-ignore
+    res.json({
+      id: updated._id,
+      username: updated.username,
+      email: updated.email,
+      role: updated.role,
+      avatar: (updated as any).avatar // ignore TS error if avatar is missing from type
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 });
 
