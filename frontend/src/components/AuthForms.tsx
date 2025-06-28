@@ -47,8 +47,8 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
         
         const { token, user } = response.data;
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        onAuthSuccess(token, user);
+        localStorage.setItem('user', JSON.stringify({ ...user, avatar: user.avatar }));
+        onAuthSuccess(token, { ...user, avatar: user.avatar });
       } else {
         // Register
         if (formData.password !== formData.confirmPassword) {
@@ -71,8 +71,8 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
 
         const { token, user } = loginResponse.data;
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        onAuthSuccess(token, user);
+        localStorage.setItem('user', JSON.stringify({ ...user, avatar: user.avatar }));
+        onAuthSuccess(token, { ...user, avatar: user.avatar });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');
