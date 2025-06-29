@@ -52,7 +52,20 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email, role: user.role, avatar: user.avatar } });
+    res.json({ 
+      token, 
+      user: { 
+        id: user._id, 
+        username: user.username, 
+        email: user.email, 
+        role: user.role, 
+        avatar: user.avatar,
+        topics: user.topics || [],
+        prerequisites: user.prerequisites || [],
+        quizScores: user.quizScores || [],
+        learningPaths: user.learningPaths || []
+      } 
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -80,6 +93,32 @@ router.get('/check-admin', async (req: Request, res: Response): Promise<void> =>
     res.json({ adminExists: !!adminExists });
   } catch (err) {
     res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get user profile with complete data
+router.get('/profile', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      topics: user.topics || [],
+      prerequisites: user.prerequisites || [],
+      quizScores: user.quizScores || [],
+      learningPaths: user.learningPaths || []
+    });
+  } catch (err) {
+    console.error('Profile fetch error:', err);
+    res.status(500).json({ message: 'Failed to fetch profile' });
   }
 });
 
@@ -112,7 +151,11 @@ router.put('/users/:id', authenticate, async (req: Request, res: Response): Prom
       username: updated.username,
       email: updated.email,
       role: updated.role,
-      avatar: (updated as any).avatar // ignore TS error if avatar is missing from type
+      avatar: (updated as any).avatar, // ignore TS error if avatar is missing from type
+      topics: updated.topics || [],
+      prerequisites: updated.prerequisites || [],
+      quizScores: updated.quizScores || [],
+      learningPaths: updated.learningPaths || []
     });
   } catch (err) {
     console.error('Profile update error:', err);

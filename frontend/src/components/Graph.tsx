@@ -83,18 +83,20 @@ const Graph = ({ topic, prerequisites }: GraphProps) => {
   }, [topic, prerequisites]);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+    <div style={{ 
+      width: '100%', 
+      height: '500px', 
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px',
+      backgroundColor: '#fafafa',
+      overflow: 'hidden'
+    }}>
       <div
         ref={containerRef}
-style={{
-  width: '100%',
-  height: '550px',
-  border: '1px solid #ccc',
-  borderRadius: '8px',
-  backgroundColor: '#fafafa',
-}}
-
-
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
       />
     </div>
   );

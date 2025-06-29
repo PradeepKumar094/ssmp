@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import Prereq from '../models/Prereq';
+import User from '../models/User';
 import { generatePrerequisites } from '../services/prereqGenerator';
 import { generateMCQs, resetGeneratedQuestions, MCQ } from '../services/mcqGenerator';
 
@@ -15,17 +16,50 @@ interface MCQRequest extends Request {
   };
 }
 
-// Route to generate and save prerequisites (no change)
+// Route to generate and save prerequisites (updated to save to user profile)
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   const { topic } = req.body;
   if (!topic) {
     res.status(400).json({ error: 'Topic is required' });
     return;
   }
+  
   try {
+    // Get user ID from the request (assuming it's set by auth middleware)
+    const userId = (req as any).userId;
+    if (!userId) {
+      res.status(401).json({ error: 'User authentication required' });
+      return;
+    }
+
     const prereqs = await generatePrerequisites(topic);
+    
+    // Save to global prerequisites collection
     const newEntry = new Prereq({ topic, prerequisites: prereqs });
     await newEntry.save();
+    
+    // Save to user's profile
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    
+    // Add topic to user's topics if not already present
+    if (!user.topics.includes(topic)) {
+      user.topics.push(topic);
+    }
+    
+    // Update or add prerequisites for this topic
+    const existingPrereqIndex = user.prerequisites.findIndex(p => p.topic === topic);
+    if (existingPrereqIndex >= 0) {
+      user.prerequisites[existingPrereqIndex].prerequisites = prereqs;
+    } else {
+      user.prerequisites.push({ topic, prerequisites: prereqs });
+    }
+    
+    await user.save();
+    
     res.json({ topic, prerequisites: prereqs });
   } catch (err: any) {
     console.error('Error generating prerequisites:', err);

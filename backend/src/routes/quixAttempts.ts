@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
 import { authenticate } from '../middleware/auth';
+import User from '../models/User';
 
 const router: Router = express.Router();
 const MAX_ATTEMPTS_PER_DAY = 3;
@@ -63,6 +64,24 @@ router.post('/quiz-attempts', authenticate, async (req: Request, res: Response):
       passed,
       timestamp: new Date(),
     });
+
+    // Also save to user's profile
+    const user = await User.findById(userId);
+    if (user) {
+      // Add topic to user's topics if not already present
+      if (!user.topics.includes(topic)) {
+        user.topics.push(topic);
+      }
+      
+      // Add quiz score to user's quizScores
+      user.quizScores.push({
+        topic,
+        score,
+        date: new Date()
+      });
+      
+      await user.save();
+    }
 
     res.json({
       canAttempt: true,

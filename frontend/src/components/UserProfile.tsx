@@ -25,6 +25,42 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onClose }) =>
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dark] = useState(false);
 
+  // Helper function to compress image
+  const compressImage = (file: File, maxWidth: number = 300, maxHeight: number = 300): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8); // 80% quality
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
@@ -34,11 +70,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onClose }) =>
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setAvatar(ev.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        setError('Image size must be less than 5MB');
+        return;
+      }
+      
+      compressImage(file).then((compressedDataUrl) => {
+        setAvatar(compressedDataUrl);
+        setError(''); // Clear any previous errors
+      }).catch((err) => {
+        console.error('Image compression error:', err);
+        setError('Failed to compress image');
+      });
     }
   };
 
@@ -51,22 +102,74 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onClose }) =>
     setSaving(true);
     setError('');
     setSuccess('');
+    
     try {
-      const response = await axios.put(`http://localhost:5000/api/auth/users/${user.id}`, {
-        username: formData.username,
-        password: formData.password || undefined,
-        avatar
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      // Validate username
+      if (!formData.username.trim()) {
+        setError('Username cannot be empty');
+        return;
+      }
+      
+      if (formData.username.length < 3) {
+        setError('Username must be at least 3 characters long');
+        return;
+      }
+      
+      // Validate password if provided
+      if (formData.password && formData.password.length < 6) {
+        setError('Password must be at least 6 characters long');
+        return;
+      }
+      
+      // Prepare update data
+      const updateData: any = {
+        username: formData.username.trim()
+      };
+      
+      // Only include password if it's provided
+      if (formData.password) {
+        updateData.password = formData.password;
+      }
+      
+      // Only include avatar if it's changed
+      if (avatar !== (user.avatar || null)) {
+        updateData.avatar = avatar;
+      }
+      
+      const response = await axios.put(`http://localhost:5000/api/auth/users/${user.id}`, updateData, {
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30 second timeout
       });
-      setSuccess('Profile updated!');
+      
+      setSuccess('Profile updated successfully!');
       setEditMode(false);
       setFormData({ ...formData, password: '' });
-      // Update localStorage and reload user in app
+      
+      // Update localStorage with new user data
       localStorage.setItem('user', JSON.stringify(response.data));
-      window.location.reload();
+      
+      // Reload the page to reflect changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      console.error('Profile update error:', err);
+      
+      if (err.response) {
+        // Server responded with error
+        const errorMessage = err.response.data?.message || 'Failed to update profile';
+        setError(errorMessage);
+      } else if (err.request) {
+        // Network error
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        // Other error
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -393,8 +496,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onClose }) =>
             </>
           )}
         </div>
-        {error && <div style={{ color: '#dc2626', marginTop: 16 }}>{error}</div>}
-        {success && <div style={{ color: '#16a34a', marginTop: 16 }}>{success}</div>}
+        {error && (
+          <div style={{ 
+            color: '#dc2626', 
+            marginTop: 16, 
+            padding: '12px 16px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+        {success && (
+          <div style={{ 
+            color: '#16a34a', 
+            marginTop: 16, 
+            padding: '12px 16px',
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            ✅ {success}
+          </div>
+        )}
       </div>
     </div>
   );

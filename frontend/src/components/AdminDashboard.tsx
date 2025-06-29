@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UserProfile from './UserProfile';
+import ChatSupport from './ChatSupport';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
 interface User {
   id: string;
@@ -12,6 +14,21 @@ interface User {
   quizScores?: { topic: string; score: number; date: string }[];
   learningPaths?: { topic: string; weeks: number; level: string; durationPerDay: string; path: any[]; generatedAt: string }[];
   avatar?: string;
+}
+
+interface Chat {
+  _id: string;
+  studentId: { username: string; email: string };
+  adminId?: { username: string; email: string };
+  subject: string;
+  status: 'open' | 'in_progress' | 'closed';
+  messages: Array<{
+    sender: 'student' | 'admin';
+    message: string;
+    timestamp: string;
+  }>;
+  createdAt: string;
+  lastMessageAt: string;
 }
 
 interface AdminDashboardProps {
@@ -29,10 +46,88 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [showProfile, setShowProfile] = useState(false);
 
   // Support chat state
-  const [chatMessages, setChatMessages] = useState<{ sender: string; message: string }[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [chatInput, setChatInput] = useState('');
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [newChatNotification, setNewChatNotification] = useState(false);
+  
+  // Professional chat support state
+  const [showChatSupport, setShowChatSupport] = useState(false);
+  const [initialChatId, setInitialChatId] = useState<string | null>(null);
+
+  const { socket, isConnected } = useWebSocket();
 
   const handleThemeToggle = () => setDarkMode((prev) => !prev);
+
+  const handleSupportClick = () => {
+    setActivePage('support');
+    setNewChatNotification(false); // Clear notification when clicking support
+  };
+
+  const handleOpenChatSupport = () => {
+    setShowChatSupport(true);
+  };
+
+  const handleCloseChatSupport = () => {
+    setShowChatSupport(false);
+    setInitialChatId(null);
+  };
+
+  // WebSocket event listeners for real-time chat
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new chat requests
+    socket.on('new_chat_request', (data: { chat: Chat }) => {
+      setChats(prev => [data.chat, ...prev]);
+      setNewChatNotification(true);
+      
+      // Show notification effect
+      showNotificationEffect();
+      
+      // Auto-switch to support page if not already there
+      if (activePage !== 'support') {
+        setActivePage('support');
+      }
+    });
+
+    // Listen for new messages in existing chats
+    socket.on('new_chat_message', (data: { chatId: string; message: any; chat: Chat }) => {
+      setChats(prev => prev.map(chat => 
+        chat._id === data.chatId 
+          ? { 
+              ...chat, 
+              messages: [...chat.messages, data.message],
+              lastMessageAt: data.message.timestamp
+            }
+          : chat
+      ));
+      
+      // Update selected chat if it's the current one
+      if (selectedChat?._id === data.chatId) {
+        setSelectedChat(prev => prev ? {
+          ...prev,
+          messages: [...prev.messages, data.message],
+          lastMessageAt: data.message.timestamp
+        } : null);
+      }
+
+      // Show notification effect
+      showNotificationEffect();
+    });
+
+    return () => {
+      socket.off('new_chat_request');
+      socket.off('new_chat_message');
+    };
+  }, [socket, selectedChat, activePage]);
+
+  const showNotificationEffect = () => {
+    // Create a notification sound effect (optional)
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+    audio.play().catch(() => {}); // Ignore errors if audio fails to play
+  };
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -63,13 +158,108 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     }
   }, [activePage]);
 
-  // Support chat send handler (mock, no backend)
-  const handleSendMessage = () => {
-    if (chatInput.trim()) {
-      setChatMessages([...chatMessages, { sender: 'admin', message: chatInput }]);
-      setChatInput('');
-      // Here you would send to backend and get student/admin replies
+  // Fetch chats when support page is active
+  useEffect(() => {
+    if (activePage === 'support') {
+      fetchChats();
     }
+  }, [activePage]);
+
+  const fetchChats = async () => {
+    try {
+      setLoadingChats(true);
+      const response = await axios.get('http://localhost:5000/api/chat', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setChats(response.data);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    } finally {
+      setLoadingChats(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !selectedChat) return;
+    
+    if (socket && isConnected) {
+      // Use WebSocket for real-time messaging
+      socket.emit('send_message', {
+        chatId: selectedChat._id,
+        message: chatInput
+      });
+      
+      // Add message optimistically
+      const newMessage = {
+        sender: 'admin' as const,
+        message: chatInput,
+        timestamp: new Date().toISOString()
+      };
+      
+      setChats(prev => prev.map(chat => 
+        chat._id === selectedChat._id 
+          ? { 
+              ...chat, 
+              messages: [...chat.messages, newMessage],
+              lastMessageAt: newMessage.timestamp
+            }
+          : chat
+      ));
+      
+      setSelectedChat(prev => prev ? {
+        ...prev,
+        messages: [...prev.messages, newMessage],
+        lastMessageAt: newMessage.timestamp
+      } : null);
+      
+      setChatInput('');
+    } else {
+      // Fallback to REST API
+      try {
+        const response = await axios.post(`http://localhost:5000/api/chat/${selectedChat._id}/messages`, {
+          message: chatInput
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        setChats(prev => prev.map(chat => 
+          chat._id === selectedChat._id ? response.data : chat
+        ));
+        setSelectedChat(response.data);
+        setChatInput('');
+      } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again.');
+      }
+    }
+  };
+
+  const handleCloseChat = async (chatId: string) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/chat/${chatId}/close`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      setChats(prev => prev.map(chat => 
+        chat._id === chatId ? response.data : chat
+      ));
+      if (selectedChat?._id === chatId) {
+        setSelectedChat(response.data);
+      }
+    } catch (error) {
+      console.error('Error closing chat:', error);
+      alert('Failed to close chat. Please try again.');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -111,7 +301,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             outline: 'none',
             transition: 'background 0.2s',
           }}>Students</button>
-          <button onClick={() => setActivePage('support')} style={{
+          <button onClick={handleOpenChatSupport} style={{
             background: activePage === 'support' ? '#e0e7ff' : 'none',
             color: activePage === 'support' ? '#6366f1' : '#18181b',
             border: 'none',
@@ -122,7 +312,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             cursor: 'pointer',
             outline: 'none',
             transition: 'background 0.2s',
-          }}>Support</button>
+            position: 'relative',
+          }}>
+            Support
+            {newChatNotification && (
+              <span style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: '50%',
+                width: 20,
+                height: 20,
+                fontSize: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                animation: 'pulse 2s infinite',
+              }}>
+                !
+              </span>
+            )}
+          </button>
           {/* Theme toggle icon */}
           <button onClick={handleThemeToggle} style={{
             background: 'none',
@@ -348,37 +561,187 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         )}
         {/* Support Page */}
         {activePage === 'support' && (
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: 400 }}>
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: 600 }}>
             <h2 style={{ fontSize: 26, fontWeight: 700, color: darkMode ? '#fff' : '#18181b', marginBottom: 24 }}>Support Queries</h2>
-            <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#23232a' : '#f9fafb', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e5e7eb' }}>
-              {chatMessages.length === 0 ? (
-                <div style={{ color: '#6b7280', fontSize: 16 }}>No messages yet. Start a conversation!</div>
-              ) : (
-                chatMessages.map((msg, idx) => (
-                  <div key={idx} style={{ marginBottom: 12, textAlign: msg.sender === 'admin' ? 'right' : 'left' }}>
-                    <span style={{
-                      display: 'inline-block',
-                      background: msg.sender === 'admin' ? '#6366f1' : '#e0e7ff',
-                      color: msg.sender === 'admin' ? '#fff' : '#18181b',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      fontSize: 15,
-                      maxWidth: '70%',
-                    }}>{msg.message}</span>
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+              {/* Chat List */}
+              <div style={{
+                width: 300,
+                borderRight: '1px solid #e5e7eb',
+                display: 'flex',
+                flexDirection: 'column',
+              }}>
+                <div style={{ padding: 16, borderBottom: '1px solid #e5e7eb' }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Active Chats</h3>
+                  <div style={{ fontSize: 14, color: '#6b7280' }}>
+                    {chats.filter(c => c.status !== 'closed').length} open
                   </div>
-                ))
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSendMessage(); }}
-                placeholder="Type your message..."
-                style={{ flex: 1, padding: 12, borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 15 }}
-              />
-              <button onClick={handleSendMessage} style={{ padding: '12px 20px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>Send</button>
+                </div>
+                
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  {loadingChats ? (
+                    <div style={{ padding: 16, textAlign: 'center', color: '#6b7280' }}>
+                      Loading chats...
+                    </div>
+                  ) : chats.length === 0 ? (
+                    <div style={{ padding: 16, textAlign: 'center', color: '#6b7280' }}>
+                      No support requests yet.
+                    </div>
+                  ) : (
+                    chats.map(chat => (
+                      <div
+                        key={chat._id}
+                        onClick={() => setSelectedChat(chat)}
+                        style={{
+                          padding: '12px 16px',
+                          borderBottom: '1px solid #f3f4f6',
+                          cursor: 'pointer',
+                          background: selectedChat?._id === chat._id ? '#e0e7ff' : 'transparent',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+                          {chat.subject}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                          {chat.studentId.username}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                          {chat.status} • {formatDate(chat.lastMessageAt)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Messages */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {selectedChat ? (
+                  <>
+                    <div style={{
+                      padding: 16,
+                      borderBottom: '1px solid #e5e7eb',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div>
+                        <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                          {selectedChat.subject}
+                        </h3>
+                        <div style={{ fontSize: 14, color: '#6b7280' }}>
+                          {selectedChat.studentId.username} • {selectedChat.status}
+                        </div>
+                      </div>
+                      {selectedChat.status !== 'closed' && (
+                        <button
+                          onClick={() => handleCloseChat(selectedChat._id)}
+                          style={{
+                            background: '#dc2626',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '8px 16px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: 13,
+                          }}
+                        >
+                          Close Chat
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div style={{
+                      flex: 1,
+                      overflowY: 'auto',
+                      padding: 16,
+                      background: '#f9fafb',
+                    }}>
+                      {selectedChat.messages.map((message, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            marginBottom: 12,
+                            textAlign: message.sender === 'admin' ? 'right' : 'left',
+                          }}
+                        >
+                          <div style={{
+                            display: 'inline-block',
+                            background: message.sender === 'admin' ? '#6366f1' : '#e0e7ff',
+                            color: message.sender === 'admin' ? '#fff' : '#18181b',
+                            borderRadius: 12,
+                            padding: '12px 16px',
+                            maxWidth: '70%',
+                            fontSize: 14,
+                          }}>
+                            {message.message}
+                          </div>
+                          <div style={{
+                            fontSize: 11,
+                            color: '#6b7280',
+                            marginTop: 4,
+                            textAlign: message.sender === 'admin' ? 'right' : 'left',
+                          }}>
+                            {formatDate(message.timestamp)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {selectedChat.status !== 'closed' && (
+                      <div style={{
+                        padding: 16,
+                        borderTop: '1px solid #e5e7eb',
+                        display: 'flex',
+                        gap: 8,
+                      }}>
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                          placeholder="Type your response..."
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 8,
+                            fontSize: 14,
+                          }}
+                        />
+                        <button
+                          onClick={handleSendMessage}
+                          disabled={!chatInput.trim()}
+                          style={{
+                            background: '#6366f1',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '12px 20px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            opacity: !chatInput.trim() ? 0.5 : 1,
+                          }}
+                        >
+                          Send
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#6b7280',
+                    fontSize: 16,
+                  }}>
+                    Select a chat to respond
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -387,6 +750,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       {showProfile && (
         <UserProfile user={user} onLogout={onLogout} onClose={() => setShowProfile(false)} />
       )}
+      
+      {/* Professional Chat Support */}
+      {showChatSupport && (
+        <ChatSupport onClose={handleCloseChatSupport} initialChatId={initialChatId || undefined} userRole="admin" />
+      )}
+      
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.1); }
+        }
+      `}</style>
     </div>
   );
 };

@@ -23,9 +23,10 @@ type Props = {
   attemptsToday: number;
   quizPassed: boolean;
   topic: string;
+  onLearningPathGenerated?: () => void;
 };
 
-const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canAttempt, attemptsToday, quizPassed, topic }) => {
+const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canAttempt, attemptsToday, quizPassed, topic, onLearningPathGenerated }) => {
   const [userAnswers, setUserAnswers] = useState<string[]>(() => Array(mcqs.length).fill(''));
   const [submitted, setSubmitted] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -427,6 +428,9 @@ const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canA
         weeks,
       });
       setLearningPath(res.data.learningPath);
+      if (onLearningPathGenerated) {
+        onLearningPathGenerated();
+      }
     } catch (err) {
       console.error('Error fetching learning path:', err);
       alert('Failed to generate learning path. Please try again.');
