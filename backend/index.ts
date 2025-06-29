@@ -440,6 +440,13 @@ const mongoUri = process.env.MONGO_URI || 'mongodb+srv://dsivasai05:csk@cluster0
 // FIX: Ensure port is properly typed and bound to 0.0.0.0
 const port: number = parseInt(process.env.PORT || '5000', 10);
 
+// DEBUG: Log environment variables
+console.log('🔍 DEBUG INFO:');
+console.log('PORT from env:', process.env.PORT);
+console.log('Parsed port:', port);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('All env keys:', Object.keys(process.env).filter(key => key.includes('PORT')));
+
 // Improved MongoDB connection with retry logic
 const connectDB = async () => {
   try {
@@ -473,24 +480,51 @@ app.use((err: any, req: any, res: any, next: any) => {
 // Connect to MongoDB first
 connectDB();
 
-// FIX: Start server with proper host binding for Render
-server.listen(port, '0.0.0.0', (err?: Error) => {
-  if (err) {
-    console.error('❌ Failed to start server:', err);
-    process.exit(1);
-  }
-  console.log(`🚀 Server running on port ${port}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://0.0.0.0:${port}/`);
-  console.log(`🔗 Server bound to 0.0.0.0:${port} for external access`);
-  console.log(`⏰ Server started at: ${new Date().toISOString()}`);
-});
+// FIX: Start server with explicit error handling and better logging
+const startServer = () => {
+  console.log('🚀 Attempting to start server...');
+  console.log('📍 Binding to address: 0.0.0.0');
+  console.log('🔌 Binding to port:', port);
+  
+  const serverInstance = server.listen(port, '0.0.0.0', () => {
+    console.log(`✅ Server successfully started!`);
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Health check: http://0.0.0.0:${port}/`);
+    console.log(`🔗 Server bound to 0.0.0.0:${port} for external access`);
+    console.log(`⏰ Server started at: ${new Date().toISOString()}`);
+    
+    // Additional debug info
+    const address = serverInstance.address();
+    console.log('📍 Server address info:', address);
+  });
+
+  serverInstance.on('error', (err: any) => {
+    console.error('❌ Server error:', err);
+    if (err.code === 'EADDRINUSE') {
+      console.log(`⚠️ Port ${port} is in use, trying port ${port + 1}`);
+      const newPort = port + 1;
+      serverInstance.listen(newPort, '0.0.0.0');
+    } else {
+      console.error('💥 Fatal server error:', err);
+      process.exit(1);
+    }
+  });
+
+  serverInstance.on('listening', () => {
+    console.log('🎉 Server is now listening for connections');
+  });
+
+  return serverInstance;
+};
+
+const serverInstance = startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   mongoose.connection.close();
-  server.close(() => {
+  serverInstance.close(() => {
     console.log('Process terminated');
     process.exit(0);
   });
@@ -499,7 +533,7 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
   mongoose.connection.close();
-  server.close(() => {
+  serverInstance.close(() => {
     console.log('Process terminated');
     process.exit(0);
   });
