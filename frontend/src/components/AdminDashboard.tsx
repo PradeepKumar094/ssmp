@@ -3,6 +3,7 @@ import axios from 'axios';
 import UserProfile from './UserProfile';
 import ChatSupport from './ChatSupport';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface User {
   id: string;
@@ -142,7 +143,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     if (activePage === 'students') {
       setLoadingStudents(true);
       setStudentsError('');
-      axios.get('http://localhost:5000/api/auth/users', {
+      axios.get(API_ENDPOINTS.USERS, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
         .then(res => {
@@ -163,7 +164,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const fetchChats = async () => {
     try {
       setLoadingChats(true);
-      const response = await axios.get('http://localhost:5000/api/chat', {
+      const response = await axios.get(API_ENDPOINTS.CHAT, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setChats(response.data);
@@ -211,7 +212,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     } else {
       // Fallback to REST API
       try {
-        const response = await axios.post(`http://localhost:5000/api/chat/${selectedChat._id}/messages`, {
+        const response = await axios.post(API_ENDPOINTS.CHAT_MESSAGES(selectedChat._id), {
           message: chatInput
         }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -231,7 +232,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const handleCloseChat = async (chatId: string) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/chat/${chatId}/close`, {}, {
+      const response = await axios.put(API_ENDPOINTS.CHAT_CLOSE(chatId), {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       

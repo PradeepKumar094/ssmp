@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 type MCQ = {
   id: string;
@@ -422,7 +423,7 @@ const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canA
 
     setLearningPathLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/learning-path', {
+      const res = await axios.post(API_ENDPOINTS.LEARNING_PATH, {
         topic,
         scorePercentage: getScorePercentage(),
         weeks,

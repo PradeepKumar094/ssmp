@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 interface User {
   id: string;
@@ -136,7 +137,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onLogout, onClose }) =>
         updateData.avatar = avatar;
       }
       
-      const response = await axios.put(`http://localhost:5000/api/auth/users/${user.id}`, updateData, {
+      const response = await axios.put(API_ENDPOINTS.UPDATE_USER(user.id), updateData, {
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'

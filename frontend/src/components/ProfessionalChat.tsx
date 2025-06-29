@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface Chat {
   _id: string;
@@ -49,7 +50,7 @@ const ProfessionalChat: React.FC<ProfessionalChatProps> = ({ onClose, initialCha
   const fetchChats = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/chat', {
+      const response = await axios.get(API_ENDPOINTS.CHAT, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setChats(response.data);
@@ -64,7 +65,7 @@ const ProfessionalChat: React.FC<ProfessionalChatProps> = ({ onClose, initialCha
     if (!newChatSubject.trim() || !newChatMessage.trim()) return;
     
     try {
-      const response = await axios.post('http://localhost:5000/api/chat', {
+      const response = await axios.post(API_ENDPOINTS.CHAT, {
         subject: newChatSubject,
         message: newChatMessage
       }, {
@@ -86,7 +87,7 @@ const ProfessionalChat: React.FC<ProfessionalChatProps> = ({ onClose, initialCha
     if (!chatInput.trim() || !selectedChat) return;
     
     try {
-      const response = await axios.post(`http://localhost:5000/api/chat/${selectedChat._id}/messages`, {
+      const response = await axios.post(API_ENDPOINTS.CHAT_MESSAGES(selectedChat._id), {
         message: chatInput
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

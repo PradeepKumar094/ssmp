@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import AdminDashboard from './components/AdminDashboard';
 import StudentDashboard from './components/StudentDashboard';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
+import { API_ENDPOINTS, API_BASE_URL } from './config/api';
 
 // Type definitions
 type PrereqData = {
@@ -62,7 +63,7 @@ function AppContent() {
   // Function to refresh user data
   const refreshUserData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/auth/profile', {
+      const response = await axios.get(API_ENDPOINTS.PROFILE, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const updatedUser = response.data;
@@ -107,7 +108,7 @@ function AppContent() {
       console.log('checkAttempts called with topic:', topic, 'data:', !!data);
       if (!topic || !data) return; // Only check if we have both topic and prerequisite data
       try {
-        const res = await axios.get('http://localhost:5000/api/quiz-attempts', {
+        const res = await axios.get(API_ENDPOINTS.QUIZ_ATTEMPTS, {
           params: { topic },
         });
         setAttemptsToday(res.data.attemptsToday);
@@ -201,7 +202,7 @@ function AppContent() {
   const testConnection = async (): Promise<boolean> => {
     try {
       setConnectionStatus('checking');
-      await axios.get('http://localhost:5000/api/auth/check-admin');
+      await axios.get(API_ENDPOINTS.CHECK_ADMIN);
       setConnectionStatus('connected');
       return true;
     } catch (error) {
@@ -220,7 +221,7 @@ function AppContent() {
     // Test connection first
     const isConnected = await testConnection();
     if (!isConnected) {
-      alert('Cannot connect to server. Please make sure the backend is running on http://localhost:5000');
+      alert(`Cannot connect to server. Please make sure the backend is running on ${API_BASE_URL}`);
       return;
     }
 
@@ -234,7 +235,7 @@ function AppContent() {
     setAttemptsToday(0);
     setCanAttempt(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/prerequisites', { topic });
+      const res = await axios.post(API_ENDPOINTS.PREREQUISITES, { topic });
       setData(res.data);
       // Refresh user data to get updated topics and prerequisites
       await refreshUserData();
@@ -275,7 +276,7 @@ function AppContent() {
 
     // Check attempts before fetching
     try {
-      const res = await axios.get('http://localhost:5000/api/quiz-attempts', {
+      const res = await axios.get(API_ENDPOINTS.QUIZ_ATTEMPTS, {
         params: { topic: data.topic },
       });
       setAttemptsToday(res.data.attemptsToday);
@@ -296,7 +297,7 @@ function AppContent() {
     setQuizPassed(false);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/prerequisites/mcq', {
+      const res = await axios.post(API_ENDPOINTS.PREREQUISITES_MCQ, {
         prerequisites: data.prerequisites,
         restart: resetCache,
       });
@@ -314,7 +315,7 @@ function AppContent() {
     setSelectedConcept(concept);
     setConceptSummary('⏳ Loading...');
     try {
-      const res = await axios.post('http://localhost:5000/api/topic-summary', {
+      const res = await axios.post(API_ENDPOINTS.TOPIC_SUMMARY, {
         topic: concept,
         mainTopic: data?.topic || '',
       });
@@ -334,7 +335,7 @@ function AppContent() {
     }
 
     try {
-      const res = await axios.get('http://localhost:5000/api/quiz-attempts', {
+      const res = await axios.get(API_ENDPOINTS.QUIZ_ATTEMPTS, {
         params: { topic: data?.topic },
       });
       setAttemptsToday(res.data.attemptsToday);
@@ -357,7 +358,7 @@ function AppContent() {
     const passed = (score / total) * 100 >= 65;
     setQuizPassed(passed);
     try {
-      await axios.post('http://localhost:5000/api/quiz-attempts', {
+      await axios.post(API_ENDPOINTS.QUIZ_ATTEMPTS, {
         quizId: currentQuizSessionId,
         score: (score / total) * 100,
         passed,
@@ -483,7 +484,7 @@ function AppContent() {
                 }}>
                   <strong>⚠️ Connection Issue:</strong> Cannot connect to the server. Please make sure:
                   <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
-                    <li>The backend server is running on http://localhost:5000</li>
+                    <li>The backend server is running on {API_BASE_URL}</li>
                     <li>You are logged in with a valid account</li>
                     <li>There are no firewall or network issues</li>
                   </ul>

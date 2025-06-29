@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 interface AuthFormsProps {
   onAuthSuccess: (token: string, userData: any) => void;
@@ -33,7 +34,7 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
     try {
       if (isLogin) {
         // Login
-        const response = await axios.post('http://localhost:5000/api/auth/login', {
+        const response = await axios.post(API_ENDPOINTS.LOGIN, {
           email: formData.email,
           password: formData.password
         });
@@ -50,7 +51,7 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
           return;
         }
 
-        await axios.post('http://localhost:5000/api/auth/register', {
+        await axios.post(API_ENDPOINTS.REGISTER, {
           username: formData.username,
           email: formData.email,
           password: formData.password

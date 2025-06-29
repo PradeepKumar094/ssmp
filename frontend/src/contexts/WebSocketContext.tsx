@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { WS_BASE_URL } from '../config/api';
 
 interface WebSocketContextType {
   connect: (token: string) => void;
@@ -40,7 +41,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
 
     try {
       setConnectionStatus('connecting');
-      const socket = io('http://localhost:5000', {
+      const socket = io(WS_BASE_URL, {
         auth: { token },
         transports: ['websocket', 'polling']
       });

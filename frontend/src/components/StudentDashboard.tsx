@@ -3,6 +3,7 @@ import axios from 'axios';
 import UserProfile from './UserProfile';
 import ChatSupport from './ChatSupport';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { API_ENDPOINTS } from '../config/api';
 
 interface User {
   id: string;
@@ -78,10 +79,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
       try {
         setLoadingNotifications(true);
         const [notificationsRes, unreadRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/notifications', {
+          axios.get(API_ENDPOINTS.NOTIFICATIONS, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           }),
-          axios.get('http://localhost:5000/api/notifications/unread-count', {
+          axios.get(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           })
         ]);
@@ -102,7 +103,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
 
   const handleMarkNotificationRead = async (notificationId: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${notificationId}/read`, {}, {
+      await axios.put(API_ENDPOINTS.NOTIFICATION_READ(notificationId), {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setNotifications(prev => 
@@ -116,7 +117,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
 
   const handleMarkAllAsRead = async () => {
     try {
-      await axios.put('http://localhost:5000/api/notifications/read-all', {}, {
+      await axios.put(API_ENDPOINTS.NOTIFICATIONS_READ_ALL, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
