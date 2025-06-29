@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ssmp-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true
+    autoDeploy: true

@@ -210,7 +210,8 @@ mongoose.connection.on('disconnected', () => {
 server.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://localhost:${port}/`);
+  console.log(`📊 Health check: http://0.0.0.0:${port}/`);
+  console.log(`🔗 Socket.IO server ready for connections`);
 });
 
 // Connect DB
