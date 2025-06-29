@@ -297,7 +297,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             outline: 'none',
             transition: 'background 0.2s',
           }}>Students</button>
-          <button onClick={handleOpenChatSupport} style={{
+          <button onClick={() => setActivePage('support')} style={{
             background: activePage === 'support' ? '#e0e7ff' : 'none',
             color: activePage === 'support' ? '#6366f1' : '#18181b',
             border: 'none',
@@ -558,7 +558,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         {/* Support Page */}
         {activePage === 'support' && (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', height: 600 }}>
-            <h2 style={{ fontSize: 26, fontWeight: 700, color: darkMode ? '#fff' : '#18181b', marginBottom: 24 }}>Support Queries</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 26, fontWeight: 700, color: darkMode ? '#fff' : '#18181b' }}>Support Queries</h2>
+              <button
+                onClick={handleOpenChatSupport}
+                style={{
+                  background: '#6366f1',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 20px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 14,
+                }}
+              >
+                Open Full Chat Interface
+              </button>
+            </div>
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
               {/* Chat List */}
               <div style={{

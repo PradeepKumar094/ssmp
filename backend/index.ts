@@ -7,19 +7,19 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
-import prereqRoutes from './routes/prerequisites';
-import summaryRoutes from './routes/summaryRoute';
-import quizAttempts from './routes/quixAttempts';
-import learningPath from './routes/learningPath';
-import authRoutes from './routes/auth';
-import notificationRoutes from './routes/notifications';
-import chatRoutes from './routes/chat';
-import { authenticate } from './middleware/auth';
-import Notification from './models/Notification';
-import Chat from './models/Chat';
+import prereqRoutes from './src/routes/prerequisites';
+import summaryRoutes from './src/routes/summaryRoute';
+import quizAttempts from './src/routes/quixAttempts';
+import learningPath from './src/routes/learningPath';
+import authRoutes from './src/routes/auth';
+import notificationRoutes from './src/routes/notifications';
+import chatRoutes from './src/routes/chat';
+import { authenticate } from './src/middleware/auth';
+import Notification from './src/models/Notification';
+import Chat from './src/models/Chat';
 
 // Load environment variables from .env file
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const server = createServer(app);

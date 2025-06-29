@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface NavbarProps {
   isDarkMode: boolean;
@@ -8,14 +8,68 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearning, onAuthClick }) => {
+  const [activeSection, setActiveSection] = useState('home');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['home', 'features', 'about', 'testimonials', 'faq', 'try'];
+      const scrollPosition = window.scrollY + 100; // Offset for better detection
+
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const { offsetTop, offsetHeight } = element;
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            if (activeSection !== section) {
+              console.log(`Active section changed to: ${section}`);
+              setActiveSection(section);
+            }
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial position
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeSection]);
+
+  const handleNavClick = (sectionId: string) => {
+    setActiveSection(sectionId);
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <nav className="navbar">
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#4f46e5' }}>LearnPath</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '0.5rem' }}>
-          <a href="#home" className="nav-link active">Home</a>
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#about" className="nav-link">About</a>
+          <a 
+            href="#home" 
+            className={`nav-link ${activeSection === 'home' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); handleNavClick('home'); }}
+          >
+            Home
+          </a>
+          <a 
+            href="#features" 
+            className={`nav-link ${activeSection === 'features' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); handleNavClick('features'); }}
+          >
+            Features
+          </a>
+          <a 
+            href="#about" 
+            className={`nav-link ${activeSection === 'about' ? 'active' : ''}`}
+            onClick={(e) => { e.preventDefault(); handleNavClick('about'); }}
+          >
+            About
+          </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button 
               onClick={onAuthClick}
@@ -40,7 +94,13 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
             >
               Login/Register
             </button>
-            <a href="#try" className="nav-link" onClick={(e) => { e.preventDefault(); onStartLearning(); }}>Try LearnPath Now</a>
+            <a 
+              href="#try" 
+              className={`nav-link ${activeSection === 'try' ? 'active' : ''}`}
+              onClick={(e) => { e.preventDefault(); onStartLearning(); }}
+            >
+              Try LearnPath Now
+            </a>
             <button onClick={toggleTheme} style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: '1rem' }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '1.75rem', height: '1.75rem', color: '#1f2937' }}>
                 {isDarkMode ? (
