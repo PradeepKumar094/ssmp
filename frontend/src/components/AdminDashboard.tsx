@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UserProfile from './UserProfile';
 import ChatSupport from './ChatSupport';
+import StudentManagement from './StudentManagement';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { API_ENDPOINTS } from '../config/api';
 
@@ -41,9 +42,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [activePage, setActivePage] = useState<'home' | 'students' | 'support'>('home');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [students, setStudents] = useState<User[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [studentsError, setStudentsError] = useState('');
   const [showProfile, setShowProfile] = useState(false);
 
   // Support chat state
@@ -58,6 +56,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [initialChatId, setInitialChatId] = useState<string | null>(null);
 
   const { socket, isConnected } = useWebSocket();
+
+  // Debug WebSocket connection
+  useEffect(() => {
+    console.log('AdminDashboard WebSocket status:', { isConnected, socket: !!socket });
+    if (socket) {
+      console.log('Socket auth data:', socket.auth);
+    }
+  }, [socket, isConnected]);
 
   const handleThemeToggle = () => setDarkMode((prev) => !prev);
 
@@ -137,22 +143,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     }
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileDropdown]);
-
-  // Fetch students when students page is active
-  useEffect(() => {
-    if (activePage === 'students') {
-      setLoadingStudents(true);
-      setStudentsError('');
-      axios.get(API_ENDPOINTS.USERS, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
-        .then(res => {
-          setStudents(res.data.filter((u: User) => u.role === 'student'));
-        })
-        .catch(() => setStudentsError('Failed to fetch students'))
-        .finally(() => setLoadingStudents(false));
-    }
-  }, [activePage]);
 
   // Fetch chats when support page is active
   useEffect(() => {
@@ -500,60 +490,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         )}
         {/* Students Page */}
         {activePage === 'students' && (
-          <div style={{ width: '100%' }}>
-            <h2 style={{ fontSize: 26, fontWeight: 700, color: darkMode ? '#fff' : '#18181b', marginBottom: 24 }}>All Students</h2>
-            {loadingStudents ? (
-              <div style={{ color: '#6b7280', fontSize: 18 }}>Loading students...</div>
-            ) : studentsError ? (
-              <div style={{ color: '#dc2626', fontSize: 18 }}>{studentsError}</div>
-            ) : students.length === 0 ? (
-              <div style={{
-                color: darkMode ? '#fff' : '#64748b',
-                fontSize: 20,
-                textAlign: 'center',
-                margin: '48px 0',
-                fontWeight: 500
-              }}>No students found.</div>
-            ) : (
-              <div style={{ overflowX: 'auto', borderRadius: 12, boxShadow: darkMode ? '0 2px 12px rgba(0,0,0,0.18)' : '0 2px 12px rgba(99,102,241,0.08)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', background: darkMode ? '#18181b' : '#fff', borderRadius: 10, minWidth: 900 }}>
-                  <thead>
-                    <tr style={{ background: darkMode ? '#23232a' : '#e0e7ff', color: darkMode ? '#fff' : '#6366f1' }}>
-                      <th style={{ padding: 14, textAlign: 'left' }}>User ID</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Username</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Email</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Password</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Topics</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Prerequisites</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Quiz Marks</th>
-                      <th style={{ padding: 14, textAlign: 'left' }}>Learning Path</th>
-                      <th style={{ padding: 14, textAlign: 'center' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map(s => (
-                      <tr key={s.id} style={{ borderBottom: '1px solid #e5e7eb', color: darkMode ? '#fff' : '#18181b' }}>
-                        <td style={{ padding: 12, fontFamily: 'monospace', fontSize: 13 }}>{s.id}</td>
-                        <td style={{ padding: 12 }}>{s.username}</td>
-                        <td style={{ padding: 12 }}>{s.email}</td>
-                        <td style={{ padding: 12 }}>••••••••</td>
-                        <td style={{ padding: 12 }}>{Array.isArray(s.topics) ? s.topics.join(', ') : ''}</td>
-                        <td style={{ padding: 12 }}>
-                          <button style={{ background: darkMode ? '#23232a' : '#e0e7ff', color: '#6366f1', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, cursor: 'pointer', fontSize: 13, marginRight: 6 }}>Edit</button>
-                          {Array.isArray(s.prerequisites) ? s.prerequisites.map((p: any) => p.topic).join(', ') : ''}
-                        </td>
-                        <td style={{ padding: 12 }}>{Array.isArray(s.quizScores) ? s.quizScores.map((q: any) => `${q.topic}: ${q.score}`).join(', ') : ''}</td>
-                        <td style={{ padding: 12 }}>{Array.isArray(s.learningPaths) ? s.learningPaths.map((lp: any) => lp.topic).join(', ') : ''}</td>
-                        <td style={{ padding: 12, textAlign: 'center' }}>
-                          <button style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <StudentManagement darkMode={darkMode} />
         )}
         {/* Support Page */}
         {activePage === 'support' && (
@@ -768,13 +705,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       {showChatSupport && (
         <ChatSupport onClose={handleCloseChatSupport} initialChatId={initialChatId || undefined} userRole="admin" />
       )}
-      
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.1); }
-        }
-      `}</style>
     </div>
   );
 };

@@ -72,16 +72,22 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Admin: Get all users
-router.get('/users', requireRole('admin'), async (req: Request, res: Response) => {
+router.get('/users', authenticate, requireRole('admin'), async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}, 'username email role _id');
+    const users = await User.find({}, 'username email role _id topics prerequisites quizScores learningPaths avatar');
     res.json(users.map(u => ({
       id: u._id,
       username: u.username,
       email: u.email,
-      role: u.role
+      role: u.role,
+      topics: u.topics || [],
+      prerequisites: u.prerequisites || [],
+      quizScores: u.quizScores || [],
+      learningPaths: u.learningPaths || [],
+      avatar: u.avatar
     })));
   } catch (err) {
+    console.error('Error fetching users:', err);
     res.status(500).json({ message: 'Failed to fetch users' });
   }
 });

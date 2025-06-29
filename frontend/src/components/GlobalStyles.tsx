@@ -104,6 +104,8 @@ const GlobalStyles: React.FC = () => (
           border-radius: 25px;
           transition: all 0.3s ease;
           font-weight: 500;
+          color: #1f2937;
+          text-decoration: none;
       }
       .nav-link::before {
           content: '';
@@ -126,16 +128,32 @@ const GlobalStyles: React.FC = () => (
           color: white !important;
           transform: translateY(-2px);
       }
+
+      /* Active state - highest specificity */
       .nav-link.active {
           color: white !important;
-          background: linear-gradient(135deg, #667eea, #764ba2);
-          box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+          background: linear-gradient(135deg, #667eea, #764ba2) !important;
+          box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4) !important;
+          transform: none !important;
       }
+      .nav-link.active::before {
+          opacity: 0 !important;
+      }
+      .nav-link.active:hover {
+          color: white !important;
+          background: linear-gradient(135deg, #667eea, #764ba2) !important;
+          transform: translateY(-2px) !important;
+      }
+
       .dark .nav-link {
           color: #e2e8f0;
       }
       .dark .nav-link:hover {
           color: white !important;
+      }
+      .dark .nav-link.active {
+          color: white !important;
+          background: linear-gradient(135deg, #667eea, #764ba2) !important;
       }
 
       .hero-section {

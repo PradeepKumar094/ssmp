@@ -4,7 +4,7 @@
   "description": "Express + TypeScript + Socket.IO backend",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node-dev index.ts",
+     "dev": "concurrently \"ts-node-dev index.ts\" \"cd ../frontend && npm run dev\"",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "build": "tsc",
