@@ -19,26 +19,52 @@ import Notification from './src/models/Notification';
 import Chat from './src/models/Chat';
 
 // Load environment variables from .env file
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config();
 
 const app = express();
 const server = createServer(app);
+
+// CORS configuration for production and development
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://ssmp-frontend.onrender.com',
+  'https://your-frontend-domain.com' // Replace with your actual frontend domain
+];
+
 const io = new Server(server, {
   cors: {
-    origin: ["https://ssmp-backend.onrender.com","http://localhost:5173"],  // Use specific origin like "http://localhost:5173" in dev
-    methods: ["GET", "POST","PUT","DELETE"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
-
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Health check route for Render
 app.get('/', (req, res) => {
-  res.send('Server is running 🚀');
+  res.json({ 
+    message: 'Server is running 🚀',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Routes
@@ -153,17 +179,52 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
-// MongoDB connection
+// MongoDB connection with better error handling
 const mongoUri = process.env.MONGO_URI || 'mongodb+srv://dsivasai05:csk@cluster0.nmjhsng.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const port = process.env.PORT || 5000;
 
-mongoose.connect(mongoUri)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => {
-    console.error('❌ MongoDB connection failed:', err);
-    console.log('⚠️ Server continues without DB connection');
-  });
+// Improved MongoDB connection with retry logic
+const connectDB = async () => {
+  try {
+    await mongoose.connect(mongoUri);
+    console.log('✅ MongoDB connected successfully');
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error);
+    console.log('⚠️ Retrying connection in 5 seconds...');
+    setTimeout(connectDB, 5000);
+  }
+};
 
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
+
+// Start server
 server.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📊 Health check: http://localhost:${port}/`);
+});
+
+// Connect to MongoDB
+connectDB();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
