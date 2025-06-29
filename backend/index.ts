@@ -31,7 +31,7 @@ const server = createServer(app);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://ssmp-frontend.onrender.com',
+  'https://ssmp.onrender.com',
   'https://ssmp-frontend.vercel.app',
   'https://your-frontend-domain.com' // Replace if needed
 ];
