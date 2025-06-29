@@ -470,16 +470,21 @@ app.use((err: any, req: any, res: any, next: any) => {
   });
 });
 
+// Connect to MongoDB first
+connectDB();
+
 // FIX: Start server with proper host binding for Render
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, '0.0.0.0', (err?: Error) => {
+  if (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  }
   console.log(`🚀 Server running on port ${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://localhost:${port}/`);
+  console.log(`📊 Health check: http://0.0.0.0:${port}/`);
   console.log(`🔗 Server bound to 0.0.0.0:${port} for external access`);
+  console.log(`⏰ Server started at: ${new Date().toISOString()}`);
 });
-
-// Connect to MongoDB after server starts
-connectDB();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

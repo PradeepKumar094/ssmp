@@ -6,9 +6,10 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "concurrently \"ts-node-dev index.ts\" \"cd ../frontend && npm run dev\"",
+    "dev": "ts-node-dev index.ts",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "postinstall": "npm run build"
   },
   "keywords": [],
   "author": "",
@@ -31,12 +32,12 @@
     "mongoose": "^8.15.1",
     "rimraf": "^5.0.5",
     "socket.io": "^4.7.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.8.3"
+    "ts-node-dev": "^2.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
