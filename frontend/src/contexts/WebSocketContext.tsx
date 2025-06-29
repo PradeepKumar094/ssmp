@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 interface WebSocketContextType {
   connect: (token: string) => void;
@@ -6,6 +7,7 @@ interface WebSocketContextType {
   sendMessage: (message: any) => void;
   isConnected: boolean;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
+  socket: Socket | null;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -25,48 +27,39 @@ interface WebSocketProviderProps {
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const wsRef = useRef<WebSocket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
 
   const connect = useCallback((token: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
+    if (socketRef.current?.connected) {
+      console.log('Socket.IO already connected');
       return;
     }
 
     try {
       setConnectionStatus('connecting');
-      const wsUrl = `ws://localhost:5000/ws?token=${token}`;
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+      const socket = io('http://localhost:5000', {
+        auth: { token },
+        transports: ['websocket', 'polling']
+      });
+      socketRef.current = socket;
 
-      ws.onopen = () => {
-        console.log('WebSocket connected');
+      socket.on('connect', () => {
+        console.log('Socket.IO connected');
         setIsConnected(true);
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
-      };
+      });
 
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('WebSocket message received:', data);
-          // Handle different message types here
-          // You can add message handlers based on your needs
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+      socket.on('disconnect', (reason) => {
+        console.log('Socket.IO disconnected:', reason);
         setIsConnected(false);
         setConnectionStatus('disconnected');
         
-        // Attempt to reconnect if not manually closed
-        if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        // Attempt to reconnect if not manually disconnected
+        if (reason !== 'io client disconnect' && reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
           console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
@@ -75,15 +68,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
             connect(token);
           }, delay);
         }
-      };
+      });
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      socket.on('connect_error', (error) => {
+        console.error('Socket.IO connection error:', error);
         setConnectionStatus('error');
-      };
+      });
 
     } catch (error) {
-      console.error('Error creating WebSocket connection:', error);
+      console.error('Error creating Socket.IO connection:', error);
       setConnectionStatus('error');
     }
   }, []);
@@ -94,9 +87,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
       reconnectTimeoutRef.current = null;
     }
     
-    if (wsRef.current) {
-      wsRef.current.close(1000, 'Manual disconnect');
-      wsRef.current = null;
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
     }
     
     setIsConnected(false);
@@ -105,10 +98,10 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
   }, []);
 
   const sendMessage = useCallback((message: any) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('send_message', message);
     } else {
-      console.warn('WebSocket is not connected. Cannot send message:', message);
+      console.warn('Socket.IO is not connected. Cannot send message:', message);
     }
   }, []);
 
@@ -125,6 +118,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
     sendMessage,
     isConnected,
     connectionStatus,
+    socket: socketRef.current,
   };
 
   return (

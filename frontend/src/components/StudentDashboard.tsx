@@ -26,19 +26,6 @@ interface Notification {
   relatedData?: any;
 }
 
-interface Chat {
-  _id: string;
-  subject: string;
-  status: 'open' | 'in_progress' | 'closed';
-  messages: Array<{
-    sender: 'student' | 'admin';
-    message: string;
-    timestamp: string;
-  }>;
-  createdAt: string;
-  lastMessageAt: string;
-}
-
 interface StudentDashboardProps {
   user: User;
   onLogout: () => void;

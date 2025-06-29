@@ -60,11 +60,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const handleThemeToggle = () => setDarkMode((prev) => !prev);
 
-  const handleSupportClick = () => {
-    setActivePage('support');
-    setNewChatNotification(false); // Clear notification when clicking support
-  };
-
   const handleOpenChatSupport = () => {
     setShowChatSupport(true);
   };

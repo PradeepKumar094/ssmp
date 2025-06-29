@@ -8,7 +8,6 @@ import UserProfile from './components/UserProfile';
 import { v4 as uuidv4 } from 'uuid';
 import AdminDashboard from './components/AdminDashboard';
 import StudentDashboard from './components/StudentDashboard';
-import HeroSection from './components/HeroSection';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
 
 // Type definitions
@@ -199,13 +198,13 @@ function AppContent() {
   }, [topic, showLearningInterface, user, data, loading]);
 
   // Test connection to backend
-  const testConnection = async () => {
+  const testConnection = async (): Promise<boolean> => {
     try {
       setConnectionStatus('checking');
-      const response = await axios.get('http://localhost:5000/api/auth/check-admin');
+      await axios.get('http://localhost:5000/api/auth/check-admin');
       setConnectionStatus('connected');
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('disconnected');
       return false;

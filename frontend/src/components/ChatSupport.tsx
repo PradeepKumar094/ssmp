@@ -29,7 +29,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onClose, initialChatId, userR
   const [newChatMessage, setNewChatMessage] = useState('');
   const [showNewChatForm, setShowNewChatForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
 
   const { socket, isConnected } = useWebSocket();
 
@@ -78,7 +77,7 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onClose, initialChatId, userR
     });
 
     // Listen for message confirmation
-    socket.on('message_sent', (data: { chatId: string; message: any }) => {
+    socket.on('message_sent', () => {
       console.log('Message sent successfully');
     });
 
@@ -612,28 +611,6 @@ const ChatSupport: React.FC<ChatSupportProps> = ({ onClose, initialChatId, userR
                       </div>
                     </div>
                   ))}
-                  {isTyping && (
-                    <div style={{
-                      marginBottom: 16,
-                      display: 'flex',
-                      justifyContent: 'flex-start',
-                    }}>
-                      <div style={{
-                        background: '#ffffff',
-                        borderRadius: 18,
-                        padding: '12px 16px',
-                        fontSize: 14,
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                        border: '1px solid #e5e7eb',
-                      }}>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <span style={{ animation: 'typing 1.4s infinite' }}>●</span>
-                          <span style={{ animation: 'typing 1.4s infinite', animationDelay: '0.2s' }}>●</span>
-                          <span style={{ animation: 'typing 1.4s infinite', animationDelay: '0.4s' }}>●</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Message Input */}

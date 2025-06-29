@@ -2,15 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 interface AuthFormsProps {
-  onAuthSuccess: (token: string, user: any) => void;
+  onAuthSuccess: (token: string, userData: any) => void;
   onClose: () => void;
-}
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: 'admin' | 'student';
 }
 
 const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
@@ -57,22 +50,14 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
           return;
         }
 
-        const response = await axios.post('http://localhost:5000/api/auth/register', {
+        await axios.post('http://localhost:5000/api/auth/register', {
           username: formData.username,
           email: formData.email,
           password: formData.password
         });
-
-        // Auto-login after successful registration
-        const loginResponse = await axios.post('http://localhost:5000/api/auth/login', {
-          email: formData.email,
-          password: formData.password
-        });
-
-        const { token, user } = loginResponse.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({ ...user, avatar: user.avatar }));
-        onAuthSuccess(token, { ...user, avatar: user.avatar });
+        setError('Registration successful! Please log in.');
+        setIsLogin(true);
+        setFormData({ username: '', email: '', password: '', confirmPassword: '' });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'An error occurred');

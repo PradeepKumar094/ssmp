@@ -30,7 +30,7 @@ const ProfessionalChat: React.FC<ProfessionalChatProps> = ({ onClose, initialCha
   const [showNewChatForm, setShowNewChatForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { socket, isConnected } = useWebSocket();
+  const { isConnected } = useWebSocket();
 
   useEffect(() => {
     fetchChats();
