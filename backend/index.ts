@@ -421,7 +421,7 @@ io.on('connection', (socket: Socket) => {
 
 // MongoDB connection with better error handling
 const mongoUri = process.env.MONGO_URI || 'mongodb+srv://dsivasai05:csk@cluster0.nmjhsng.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const port = process.env.PORT || 5000;
+const port = parseInt(process.env.PORT || '5000', 10); // Fix: Parse port to number
 
 // Improved MongoDB connection with retry logic
 const connectDB = async () => {
