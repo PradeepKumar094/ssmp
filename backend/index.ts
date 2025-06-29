@@ -29,6 +29,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://ssmp-frontend.onrender.com',
+  'https://ssmp-frontend.vercel.app',
   'https://your-frontend-domain.com' // Replace with your actual frontend domain
 ];
 
@@ -49,6 +50,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
