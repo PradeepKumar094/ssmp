@@ -438,7 +438,7 @@ io.on('connection', (socket: Socket) => {
 const mongoUri = process.env.MONGO_URI || 'mongodb+srv://dsivasai05:csk@cluster0.nmjhsng.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 // FIX: Ensure port is properly typed and bound to 0.0.0.0
-const port: number = parseInt(process.env.PORT || '5000', 10);
+const port = process.env.PORT || 5000 as number;
 
 // DEBUG: Log environment variables
 console.log('🔍 DEBUG INFO:');
