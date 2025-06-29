@@ -186,15 +186,22 @@ io.on('connection', (socket: Socket) => {
 const mongoUri = process.env.MONGO_URI || '';
 const port = parseInt(process.env.PORT || '5000');
 
+// Ensure port is valid
+if (isNaN(port) || port <= 0) {
+  console.error('❌ Invalid port number:', process.env.PORT);
+  process.exit(1);
+}
+
+console.log(`🔧 Configured to run on port: ${port}`);
+
 // Retry on failure
-const connectDB = async () => {
+const connectDB = async (): Promise<void> => {
   try {
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected successfully');
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err);
-    console.log('⚠️ Retrying connection in 5 seconds...');
-    setTimeout(connectDB, 5000);
+    throw err; // Let the caller handle the retry logic
   }
 };
 
@@ -207,15 +214,39 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Start the server
-server.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${port}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://0.0.0.0:${port}/`);
-  console.log(`🔗 Socket.IO server ready for connections`);
-});
+const startServer = () => {
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Health check: http://0.0.0.0:${port}/`);
+    console.log(`🔗 Socket.IO server ready for connections`);
+    console.log(`✅ Server is listening and ready to accept connections`);
+  });
 
-// Connect DB
-connectDB();
+  server.on('error', (error: any) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use`);
+      process.exit(1);
+    } else {
+      console.error('❌ Server error:', error);
+      process.exit(1);
+    }
+  });
+};
+
+// Connect to MongoDB first, then start server
+const initializeApp = async () => {
+  try {
+    await connectDB();
+    startServer();
+  } catch (error) {
+    console.error('❌ Failed to initialize app:', error);
+    process.exit(1);
+  }
+};
+
+// Initialize the application
+initializeApp();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

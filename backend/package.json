@@ -6,9 +6,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:prod": "NODE_ENV=production node dist/index.js",
     "dev": "ts-node-dev index.ts",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "postinstall": "npm run build && echo 'Build completed, ready to start'"
   },
   "keywords": [],
   "author": "",
