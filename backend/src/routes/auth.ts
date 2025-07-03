@@ -14,17 +14,27 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ message: 'All fields are required.' });
     return;
   }
+  // Strong password regex: min 8 chars, upper, lower, number, special char
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}[\]|;:'",.<>/?]).{8,}$/;
+  if (!strongPasswordRegex.test(password)) {
+    res.status(400).json({ message: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.' });
+    return;
+  }
   try {
-    const existing = await User.findOne({ $or: [{ username }, { email }] });
-    if (existing) {
-      res.status(409).json({ message: 'User already exists.' });
+    // Check for unique username and email separately for better error messages
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      res.status(409).json({ message: 'Username already exists.' });
       return;
     }
-    
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      res.status(409).json({ message: 'Email already exists.' });
+      return;
+    }
     // Check if any admin exists
     const adminExists = await User.findOne({ role: 'admin' });
     const role = adminExists ? 'student' : 'admin';
-    
     const hashed = await bcrypt.hash(password, 10);
     await User.create({ username, email, password: hashed, role });
     res.status(201).json({ message: 'User registered successfully.' });
@@ -166,6 +176,22 @@ router.put('/users/:id', authenticate, async (req: Request, res: Response): Prom
   } catch (err) {
     console.error('Profile update error:', err);
     res.status(500).json({ message: 'Failed to update profile' });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/users/:id', authenticate, requireRole('admin'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    const deleted = await User.findByIdAndDelete(userId);
+    if (!deleted) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('User deletion error:', err);
+    res.status(500).json({ message: 'Failed to delete user' });
   }
 });
 

@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UserProfile from './UserProfile';
 import ChatSupport from './ChatSupport';
+import Graph from './Graph';
+import Quiz from './Quiz';
 import { useWebSocket } from '../contexts/WebSocketContext';
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS, API_BASE_URL } from '../config/api';
+import { v4 as uuidv4 } from 'uuid';
 
 interface User {
   id: string;
@@ -50,6 +53,22 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
   // Detailed topic view state
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [showTopicDetails, setShowTopicDetails] = useState(false);
+
+  // Prerequisites modal state
+  const [showPrereqModal, setShowPrereqModal] = useState(false);
+  const [topic, setTopic] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
+  const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
+  const [conceptSummary, setConceptSummary] = useState('');
+  const [mcqs, setMcqs] = useState<any>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [currentQuizSessionId, setCurrentQuizSessionId] = useState<string>('');
+  const [canAttempt, setCanAttempt] = useState(true);
+  const [attemptsToday, setAttemptsToday] = useState(0);
+  const [quizPassed, setQuizPassed] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
 
   const { isConnected } = useWebSocket();
 
@@ -169,6 +188,213 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
     // You can also store the topic in localStorage or pass it through props
     localStorage.setItem('selectedTopicForQuiz', topic);
   };
+
+  const handleGetPrerequisites = async (topicName: string) => {
+    setTopic(topicName);
+    setShowPrereqModal(true);
+    setData(null);
+    setSelectedConcept(null);
+    setConceptSummary('');
+    setIsAcknowledged(false);
+    setMcqs(null);
+    setCurrentQuizSessionId(uuidv4());
+    setQuizPassed(false);
+
+    // Automatically fetch prerequisites for the selected topic
+    if (topicName.trim()) {
+      setLoading(true);
+      try {
+        const response = await axios.post(`${API_BASE_URL}/api/prerequisites`, {
+          topic: topicName
+        }, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Prerequisites response:', response.data);
+        setData(response.data);
+      } catch (error) {
+        console.error('Error fetching prerequisites:', error);
+        alert('Failed to fetch prerequisites. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Test connection to backend
+  const testConnection = async (): Promise<boolean> => {
+    try {
+      setConnectionStatus('checking');
+      await axios.get(API_ENDPOINTS.CHECK_ADMIN);
+      setConnectionStatus('connected');
+      return true;
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('disconnected');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    testConnection();
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!topic.trim()) {
+      alert('Please enter a topic.');
+      return;
+    }
+
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      alert(`Cannot connect to server. Please make sure the backend is running on ${API_BASE_URL}`);
+      return;
+    }
+
+    setLoading(true);
+    setMcqs(null);
+    setData(null);
+    setSelectedConcept(null);
+    setConceptSummary('');
+    setCurrentQuizSessionId(uuidv4());
+    setQuizPassed(false);
+    setAttemptsToday(0);
+    setCanAttempt(true);
+    try {
+      const res = await axios.post(API_ENDPOINTS.PREREQUISITES, { topic });
+      setData(res.data);
+    } catch (err: any) {
+      console.error('Error fetching prerequisites:', err);
+      if (err.response?.status === 401) {
+        alert('Authentication error. Please log in again.');
+      } else {
+        alert('Failed to fetch prerequisites. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConceptClick = async (concept: string) => {
+    setSelectedConcept(concept);
+    setConceptSummary('⏳ Loading...');
+    try {
+      const res = await axios.post(API_ENDPOINTS.TOPIC_SUMMARY, {
+        topic: concept,
+        mainTopic: data?.topic || '',
+      });
+      setConceptSummary(res.data.summary);
+    } catch (err) {
+      console.error('Error fetching summary', err);
+      setConceptSummary('⚠️ Failed to load summary.');
+    }
+  };
+
+  const fetchMCQs = async (resetCache: boolean = false) => {
+    if (!data || (!isAcknowledged && !resetCache)) return;
+
+    try {
+      const res = await axios.get(API_ENDPOINTS.QUIZ_ATTEMPTS, {
+        params: { topic: data.topic },
+      });
+      setAttemptsToday(res.data.attemptsToday);
+      setCanAttempt(res.data.canAttempt);
+      if (!res.data.canAttempt) {
+        alert(`Max attempts reached for ${data.topic} today. Please try again tomorrow.`);
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking quiz attempts:', err);
+      return;
+    }
+
+    setQuizLoading(true);
+    setMcqs(null);
+    setCurrentQuizSessionId(uuidv4());
+    setQuizPassed(false);
+
+    try {
+      const res = await axios.post(API_ENDPOINTS.PREREQUISITES_MCQ, {
+        prerequisites: data.prerequisites,
+        restart: resetCache,
+      });
+      setMcqs(res.data);
+    } catch (err) {
+      console.error('Error fetching MCQs:', err);
+      alert('Failed to fetch quiz questions. Please try again.');
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  const handleQuizRestart = async (score: number, passed: boolean) => {
+    if (passed) {
+      setQuizPassed(true);
+      return;
+    }
+
+    try {
+      const res = await axios.get(API_ENDPOINTS.QUIZ_ATTEMPTS, {
+        params: { topic: data?.topic },
+      });
+      setAttemptsToday(res.data.attemptsToday);
+      setCanAttempt(res.data.canAttempt);
+      if (!res.data.canAttempt) {
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking quiz attempts:', err);
+      return;
+    }
+
+    setIsAcknowledged(false);
+    await fetchMCQs(true);
+  };
+
+  const handleQuizSubmit = async (score: number, total: number) => {
+    const passed = (score / total) * 100 >= 65;
+    setQuizPassed(passed);
+    try {
+      await axios.post(API_ENDPOINTS.QUIZ_ATTEMPTS, {
+        quizId: currentQuizSessionId,
+        score: (score / total) * 100,
+        passed,
+        topic: data?.topic,
+      });
+      setAttemptsToday((prev) => prev + 1);
+      setCanAttempt(attemptsToday + 1 < 3);
+    } catch (err) {
+      console.error('Error recording quiz attempt:', err);
+      alert('Failed to record quiz attempt. Please try again.');
+    }
+  };
+
+  const refreshUserData = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.PROFILE, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const updatedUser = response.data;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error: any) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
+  const handleClosePrereqModal = () => {
+    setShowPrereqModal(false);
+    setTopic('');
+    setData(null);
+    setLoading(false);
+    setIsAcknowledged(false);
+    setSelectedConcept(null);
+    setConceptSummary('');
+  };
+
+
 
   // Hardcoded courses data
   const availableCourses = [
@@ -754,9 +980,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                     </div>
                   </div>
 
-                  {/* Start Learning Button */}
+                  {/* Get Prerequisites Button */}
                   <button
-                    onClick={() => handleCourseSelect(course.title)}
+                    onClick={() => handleGetPrerequisites(course.title)}
                     style={{
                       width: '100%',
                       background: course.color,
@@ -776,7 +1002,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                       e.currentTarget.style.transform = 'scale(1)';
                     }}
                   >
-                    Start Learning 🚀
+                    Get Prerequisites �
                   </button>
                 </div>
               ))}
@@ -2084,11 +2310,289 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
           </div>
         </div>
       )}
-      
+
+      {/* Prerequisites Modal */}
+      {showPrereqModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            background: darkMode ? '#1f2937' : '#ffffff',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 1200,
+            maxHeight: '95vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            border: '1px solid',
+            borderColor: darkMode ? '#374151' : '#e5e7eb',
+            width: '100%',
+          }}>
+            {/* Close Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+              <button
+                onClick={handleClosePrereqModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                  color: darkMode ? '#9ca3af' : '#6b7280',
+                  padding: 8,
+                  borderRadius: 8,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = darkMode ? '#374151' : '#f3f4f6';
+                  e.currentTarget.style.color = darkMode ? '#ffffff' : '#374151';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = darkMode ? '#9ca3af' : '#6b7280';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+              <div style={{ marginBottom: '30px' }}>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => {
+                    console.log('Topic changed to:', e.target.value);
+                    setTopic(e.target.value);
+                  }}
+                  placeholder="Enter a topic you want to learn..."
+                  style={{
+                    width: '100%',
+                    padding: '15px',
+                    fontSize: '18px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                />
+
+                {connectionStatus === 'disconnected' && (
+                  <div style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '20px',
+                    color: '#991b1b',
+                    fontSize: '14px',
+                  }}>
+                    <strong>⚠️ Connection Issue:</strong> Cannot connect to the server. Please make sure:
+                    <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+                      <li>The backend server is running on {API_BASE_URL}</li>
+                      <li>You are logged in with a valid account</li>
+                      <li>There are no firewall or network issues</li>
+                    </ul>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || connectionStatus === 'disconnected'}
+                  style={{
+                    background: connectionStatus === 'disconnected' ? '#9ca3af' : '#6366f1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '15px 30px',
+                    fontSize: '18px',
+                    cursor: (loading || connectionStatus === 'disconnected') ? 'not-allowed' : 'pointer',
+                    opacity: (loading || connectionStatus === 'disconnected') ? 0.6 : 1,
+                  }}
+                >
+                  {loading ? 'Loading...' : connectionStatus === 'disconnected' ? 'Server Disconnected' : 'Generate Prerequisites'}
+                </button>
+              </div>
+
+              {loading && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '60px',
+                  color: '#6b7280'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '4px solid #e5e7eb',
+                    borderTopColor: '#6366f1',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    marginBottom: '16px'
+                  }}></div>
+                  <div style={{ fontSize: '18px', fontWeight: '600' }}>
+                    Generating Prerequisites...
+                  </div>
+                </div>
+              )}
+
+              {data && !loading && (
+                <div>
+                  <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>
+                    Prerequisites for: {data.topic}
+                  </h2>
+
+                  <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+                    {/* Left side - Prerequisite Summary */}
+                    <div style={{ flex: '1', minWidth: '300px' }}>
+                      <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
+                        Prerequisites Summary
+                      </h3>
+                      <div style={{
+                        background: '#f9fafb',
+                        padding: '20px',
+                        borderRadius: '8px',
+                        lineHeight: '1.6',
+                        border: '1px solid #e5e7eb',
+                        minHeight: '400px'
+                      }}>
+                        <p style={{ marginBottom: '15px', color: '#4b5563' }}>
+                          To successfully learn <strong>{data.topic}</strong>, you should have a solid understanding of the following concepts:
+                        </p>
+                        <ol style={{ paddingLeft: '20px', color: '#374151' }}>
+                          {data.prerequisites.map((prereq: string, index: number) => (
+                            <li key={index} style={{ marginBottom: '10px' }}>
+                              <strong>{prereq}</strong>
+                              <button
+                                onClick={() => handleConceptClick(prereq)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#6366f1',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  marginLeft: '10px',
+                                  textDecoration: 'underline'
+                                }}
+                              >
+                                Learn more
+                              </button>
+                            </li>
+                          ))}
+                        </ol>
+                        {selectedConcept && (
+                          <div style={{ marginTop: '20px', padding: '15px', background: '#e0f2fe', borderRadius: '6px', border: '1px solid #0288d1' }}>
+                            <h4 style={{ marginBottom: '10px', color: '#0277bd' }}>{selectedConcept}</h4>
+                            <p style={{ color: '#01579b', lineHeight: '1.5' }}>{conceptSummary}</p>
+                            <button
+                              onClick={() => setSelectedConcept(null)}
+                              style={{
+                                background: '#0288d1',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '5px 10px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginTop: '10px'
+                              }}
+                            >
+                              Close
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side - Graph */}
+                    <div style={{ flex: '1', minWidth: '400px' }}>
+                      <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
+                        Learning Path Visualization
+                      </h3>
+                      <Graph topic={data.topic} prerequisites={data.prerequisites} />
+                    </div>
+                  </div>
+
+                  {!isAcknowledged && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                      <button
+                        onClick={() => setIsAcknowledged(true)}
+                        style={{
+                          background: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '15px 30px',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        I Understand These Prerequisites
+                      </button>
+                    </div>
+                  )}
+
+                  {isAcknowledged && !mcqs && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                      <button
+                        onClick={() => fetchMCQs()}
+                        disabled={quizLoading}
+                        style={{
+                          background: '#6366f1',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '15px 30px',
+                          fontSize: '18px',
+                          cursor: quizLoading ? 'not-allowed' : 'pointer',
+                          opacity: quizLoading ? 0.6 : 1,
+                        }}
+                      >
+                        {quizLoading ? 'Generating Quiz...' : 'Take Quiz'}
+                      </button>
+                    </div>
+                  )}
+
+                  {mcqs && (
+                    <Quiz
+                      mcqs={mcqs}
+                      quizId={currentQuizSessionId}
+                      onRestartQuiz={handleQuizRestart}
+                      onSubmitQuiz={handleQuizSubmit}
+                      canAttempt={canAttempt}
+                      attemptsToday={attemptsToday}
+                      quizPassed={quizPassed}
+                      topic={data.topic}
+                      onLearningPathGenerated={refreshUserData}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
         
         @keyframes slideInDown {

@@ -11,6 +11,7 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
   const [activeSection, setActiveSection] = useState('home');
   const [isScrolling, setIsScrolling] = useState(false);
   const [userClicked, setUserClicked] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout;
@@ -81,12 +82,12 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#4f46e5' }}>
           LearnPath
-          {/* Debug info - remove this later */}
-          <span style={{ fontSize: '0.8rem', marginLeft: '1rem', color: '#666' }}>
-            Active: {activeSection}
-          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '0.5rem' }}>
+        {/* Hamburger for mobile */}
+        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(v => !v)} aria-label="Toggle menu" style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', fontSize: '2rem' }}>
+          <span>{isMobileMenuOpen ? '✕' : '☰'}</span>
+        </button>
+        <div className={`nav-links-wrapper${isMobileMenuOpen ? ' open' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '0.5rem' }}>
           <a 
             href="#home" 
             className={`nav-link ${activeSection === 'home' ? 'active' : ''}`}

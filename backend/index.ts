@@ -7,6 +7,9 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
+// JWT Secret configuration (will be loaded after dotenv.config() below)
+const getJWTSecret = () => process.env.JWT_SECRET || 'changeme';
+
 import prereqRoutes from './src/routes/prerequisites';
 import summaryRoutes from './src/routes/summaryRoute';
 import quizAttempts from './src/routes/quixAttempts';
@@ -81,13 +84,20 @@ app.use('/api/chat', chatRoutes);
 // WebSocket authentication
 io.use((socket: Socket, next) => {
   const token = socket.handshake.auth.token;
-  if (!token) return next(new Error('Authentication error'));
+  console.log('WebSocket auth attempt, token:', token ? 'present' : 'missing');
+
+  if (!token) {
+    console.log('WebSocket auth failed: No token provided');
+    return next(new Error('Authentication error'));
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    const decoded = jwt.verify(token, getJWTSecret()) as any;
+    console.log('WebSocket auth successful for user:', decoded.id);
     (socket as any).data = { user: decoded };
     next();
-  } catch {
+  } catch (error) {
+    console.log('WebSocket auth failed: Invalid token', error);
     next(new Error('Authentication error'));
   }
 });

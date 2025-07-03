@@ -25,6 +25,8 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
   const [studentFilter, setStudentFilter] = useState('');
   const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
 
   // Filter students when filter changes
   useEffect(() => {
@@ -65,6 +67,26 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  // Delete student handler
+  const handleDeleteStudent = async (studentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) return;
+    setDeletingStudentId(studentId);
+    setDeleteError('');
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(API_ENDPOINTS.DELETE_USER(studentId), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStudents(prev => prev.filter(s => s.id !== studentId));
+      setFilteredStudents(prev => prev.filter(s => s.id !== studentId));
+      if (selectedStudent && selectedStudent.id === studentId) setSelectedStudent(null);
+    } catch (error: any) {
+      setDeleteError(error.response?.data?.message || error.message || 'Failed to delete student');
+    } finally {
+      setDeletingStudentId(null);
+    }
   };
 
   return (
@@ -283,12 +305,33 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
                         fontWeight: 600,
                         cursor: 'pointer',
                         fontSize: 13,
-                        transition: 'background-color 0.2s'
+                        transition: 'background-color 0.2s',
+                        marginRight: 8
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = '#4f46e5'}
                       onMouseLeave={(e) => e.currentTarget.style.background = '#6366f1'}
                     >
                       View Details
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStudent(student.id);
+                      }}
+                      style={{
+                        background: '#dc2626',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '6px 12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        opacity: deletingStudentId === student.id ? 0.5 : 1
+                      }}
+                      disabled={deletingStudentId === student.id}
+                    >
+                      {deletingStudentId === student.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </td>
                 </tr>
@@ -579,7 +622,27 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
               >
                 Edit Student
               </button>
+              <button
+                onClick={() => handleDeleteStudent(selectedStudent.id)}
+                style={{
+                  background: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '12px 24px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  opacity: deletingStudentId === selectedStudent.id ? 0.5 : 1
+                }}
+                disabled={deletingStudentId === selectedStudent.id}
+              >
+                {deletingStudentId === selectedStudent.id ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
+            {deleteError && (
+              <div style={{ color: '#dc2626', fontSize: 16, marginTop: 16, textAlign: 'right' }}>{deleteError}</div>
+            )}
           </div>
         </div>
       )}

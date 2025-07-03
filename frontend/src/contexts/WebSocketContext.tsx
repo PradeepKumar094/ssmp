@@ -40,6 +40,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
     }
 
     try {
+      console.log('Attempting WebSocket connection with token:', token ? 'present' : 'missing');
       setConnectionStatus('connecting');
       const socket = io(WS_BASE_URL, {
         auth: { token },

@@ -25,9 +25,10 @@ type Props = {
   quizPassed: boolean;
   topic: string;
   onLearningPathGenerated?: () => void;
+  onBackToHome?: () => void;
 };
 
-const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canAttempt, attemptsToday, quizPassed, topic, onLearningPathGenerated }) => {
+const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canAttempt, attemptsToday, quizPassed, topic, onLearningPathGenerated, onBackToHome }) => {
   const [userAnswers, setUserAnswers] = useState<string[]>(() => Array(mcqs.length).fill(''));
   const [submitted, setSubmitted] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -678,6 +679,34 @@ const Quiz: React.FC<Props> = ({ mcqs, quizId, onRestartQuiz, onSubmitQuiz, canA
                     </ul>
                   </div>
                 ))}
+              </div>
+
+              {/* Back to Dashboard Button */}
+              <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                <button
+                  onClick={onBackToHome}
+                  style={{
+                    padding: '15px 30px',
+                    backgroundColor: currentTheme.buttonPrimary,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = currentTheme.boxShadow;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  🏠 Back to Dashboard
+                </button>
               </div>
             </div>
           )}

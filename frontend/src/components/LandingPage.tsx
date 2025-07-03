@@ -70,13 +70,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartLearning, onAuthClick 
           onStartLearning={onStartLearning} 
           onAuthClick={onAuthClick}
         />
-        <HeroSection onStartLearning={onStartLearning} />
-        <FeaturesSection />
-        <AboutSection />
-        <TestimonialsSection />
-        <FAQSection />
-        <CallToActionSection onStartLearning={onStartLearning} />
-        <Footer />
+        <HeroSection onStartLearning={onStartLearning} isDarkMode={isDarkMode} />
+        <FeaturesSection isDarkMode={isDarkMode} />
+        <AboutSection isDarkMode={isDarkMode} />
+        <TestimonialsSection isDarkMode={isDarkMode} />
+        <FAQSection isDarkMode={isDarkMode} />
+        <CallToActionSection onStartLearning={onStartLearning} isDarkMode={isDarkMode} />
+        <Footer isDarkMode={isDarkMode} />
       </div>
     </>
   );

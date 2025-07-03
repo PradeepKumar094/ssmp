@@ -1,8 +1,16 @@
 import React from 'react';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  isDarkMode?: boolean;
+}
+
+const Footer: React.FC<FooterProps> = ({ isDarkMode = false }) => {
   return (
-    <footer style={{ backgroundColor: '#1f2937', color: 'white', padding: '3rem 1.5rem' }}>
+    <footer className="footer-content" style={{
+      backgroundColor: isDarkMode ? '#0f172a' : '#1f2937',
+      color: 'white',
+      padding: '3rem 1.5rem'
+    }}>
       <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
         <div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem' }}>LearnPath</h3>

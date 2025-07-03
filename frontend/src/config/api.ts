@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   USERS: `${API_BASE_URL}/api/auth/users`,
   CHECK_ADMIN: `${API_BASE_URL}/api/auth/check-admin`,
   UPDATE_USER: (userId: string) => `${API_BASE_URL}/api/auth/users/${userId}`,
+  DELETE_USER: (userId: string) => `${API_BASE_URL}/api/auth/users/${userId}`,
   
   // Chat endpoints
   CHAT: `${API_BASE_URL}/api/chat`,

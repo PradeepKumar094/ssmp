@@ -82,6 +82,16 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
     resetForm();
   };
 
+  // Add password strength check function and state
+  const passwordChecks = [
+    { label: 'At least 8 characters', test: (pw: string) => pw.length >= 8 },
+    { label: 'One uppercase letter', test: (pw: string) => /[A-Z]/.test(pw) },
+    { label: 'One lowercase letter', test: (pw: string) => /[a-z]/.test(pw) },
+    { label: 'One number', test: (pw: string) => /[0-9]/.test(pw) },
+    { label: 'One special character', test: (pw: string) => /[!@#$%^&*()_+\-={}[\]|;:'\",.<>/?]/.test(pw) },
+  ];
+  const passwordStatus = passwordChecks.map(c => c.test(formData.password));
+
   return (
     <div style={{
       position: 'fixed',
@@ -248,6 +258,39 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
               onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
               placeholder="Enter your password"
             />
+            {/* Password strength feedback (registration only) */}
+            {!isLogin && formData.password && (
+              <ul style={{
+                margin: '10px 0 0 0',
+                padding: 0,
+                listStyle: 'none',
+                fontSize: 13,
+                color: '#374151',
+                background: '#f9fafb',
+                borderRadius: 8,
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(99,102,241,0.04)',
+                maxWidth: 340,
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}>
+                {passwordChecks.map((check, idx) => (
+                  <li key={check.label} style={{
+                    color: passwordStatus[idx] ? '#10b981' : '#ef4444',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontWeight: passwordStatus[idx] ? 600 : 400,
+                    padding: '2px 0',
+                  }}>
+                    <span style={{ fontSize: 16 }}>
+                      {passwordStatus[idx] ? '✔️' : '❌'}
+                    </span>
+                    {check.label}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {!isLogin && (

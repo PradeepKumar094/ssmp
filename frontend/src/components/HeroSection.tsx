@@ -2,9 +2,10 @@ import React from 'react';
 
 interface HeroSectionProps {
   onStartLearning: () => void;
+  isDarkMode?: boolean;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning }) => {
+const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning, isDarkMode = false }) => {
   return (
     <section id="home" className="hero-section">
       <div
@@ -27,13 +28,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning }) => {
           className="hero-text"
         >
           <h1
-            className="fade-in-up"
+            className="fade-in-up hero-title"
             style={{
               fontSize: '3rem',
               fontWeight: 800,
               lineHeight: '1.2',
               marginBottom: '1.5rem',
-              color: 'white',
+              color: isDarkMode ? 'var(--text-color-dark)' : 'white',
               textAlign: 'left',
             }}
           >
@@ -41,10 +42,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning }) => {
             <span style={{ color: '#2dd4bf' }}>AI-Powered</span> Learning
           </h1>
           <p
+            className="hero-description"
             style={{
               fontSize: '1.25rem',
               marginBottom: '2rem',
-              color: '#e5e7eb',
+              color: isDarkMode ? '#94a3af' : '#e5e7eb',
               textAlign: 'left',
             }}
           >
@@ -95,7 +97,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning }) => {
                   animation: 'pulse 2s infinite',
                 }}
               ></div>
-              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#1f2937' }}>
+              <span style={{
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: isDarkMode ? '#e2e8f0' : '#1f2937'
+              }}>
                 50,000+ Active Learners
               </span>
             </div>
@@ -119,6 +125,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning }) => {
               width: 50% !important;
               max-width: 500px !important;
             }
+          }
+
+          /* Dark mode text colors */
+          .dark .hero-title {
+            color: var(--text-color-dark) !important;
+          }
+          .dark .hero-description {
+            color: #94a3af !important;
+          }
+          .dark .hero-section .image-container + div span {
+            color: #e2e8f0 !important;
           }
         `}</style>
       </div>
