@@ -327,6 +327,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
       const res = await axios.post(API_ENDPOINTS.PREREQUISITES_MCQ, {
         prerequisites: data.prerequisites,
         restart: resetCache,
+        courseName: data.topic // Send the course/topic name for better MCQ generation context
       });
       setMcqs(res.data);
     } catch (err) {

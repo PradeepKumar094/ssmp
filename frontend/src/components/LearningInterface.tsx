@@ -151,7 +151,8 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ onBack }) => {
       const response = await axios.post(
         API_ENDPOINTS.PREREQUISITES_MCQ,
         {
-          prerequisites: data.prerequisites
+          prerequisites: data.prerequisites,
+          courseName: data.topic // Send the course/topic name for better MCQ generation context
         },
         {
           headers: {

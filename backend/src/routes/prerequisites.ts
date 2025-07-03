@@ -12,6 +12,7 @@ interface MCQRequest extends Request {
   body: {
     prerequisites: string[];
     restart?: boolean; // Optional flag to indicate a quiz restart
+    courseName?: string; // Optional course name for better MCQ generation context
     // questionCount is removed from here as it's now fixed on the backend
   };
 }
@@ -69,12 +70,13 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 // Route to generate MCQs - will now always generate 15 questions
 router.post('/mcq', async (req: MCQRequest, res: Response): Promise<void> => {
-  const { prerequisites, restart } = req.body; // 'questionCount' is removed from destructuring
-  
+  const { prerequisites, restart, courseName } = req.body; // Added courseName to destructuring
+
   console.log('🎯 MCQ Generation Request:');
   console.log('  - Prerequisites:', prerequisites);
   console.log('  - Restart flag:', restart);
-  
+  console.log('  - Course Name:', courseName);
+
   if (!Array.isArray(prerequisites) || prerequisites.length === 0) {
     console.log('❌ Error: Prerequisites array is required and must not be empty');
     res.status(400).json({ error: 'Prerequisites array is required and must not be empty' });
@@ -87,7 +89,7 @@ router.post('/mcq', async (req: MCQRequest, res: Response): Promise<void> => {
   console.log('🚀 Starting MCQ generation for', targetCount, 'questions...');
 
   try {
-    const mcqs: MCQ[] = await generateMCQs(prerequisites, targetCount, restart);
+    const mcqs: MCQ[] = await generateMCQs(prerequisites, targetCount, restart, courseName);
     console.log('✅ MCQ Generation successful. Generated', mcqs.length, 'questions');
     res.json(mcqs);
   } catch (err: any) {
@@ -97,7 +99,7 @@ router.post('/mcq', async (req: MCQRequest, res: Response): Promise<void> => {
 });
 
 // Endpoint to explicitly reset the MCQ cache (no change)
-router.post('/reset-mcq-cache', (req: Request, res: Response) => {
+router.post('/reset-mcq-cache', (_req: Request, res: Response) => {
   resetGeneratedQuestions();
   res.status(200).json({ message: 'MCQ cache reset successfully.' });
 });

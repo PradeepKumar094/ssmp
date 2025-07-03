@@ -36,9 +36,10 @@ export function resetGeneratedQuestions(topics?: string[]) {
  * @param prerequisites An array of topics (strings) for which to generate MCQs.
  * @param targetQuestionCount The total number of questions to generate across all prerequisites.
  * @param shouldResetCacheForTopics If true, clears the internal cache for the given prerequisites before generating new questions.
+ * @param courseName Optional course name to provide better context for MCQ generation.
  * @returns A Promise that resolves to an array of MCQ objects.
  */
-export async function generateMCQs(prerequisites: string[], targetQuestionCount: number, shouldResetCacheForTopics: boolean = false): Promise<MCQ[]> {
+export async function generateMCQs(prerequisites: string[], targetQuestionCount: number, shouldResetCacheForTopics: boolean = false, courseName?: string): Promise<MCQ[]> {
   const results: MCQ[] = [];
 
   if (shouldResetCacheForTopics) {
@@ -79,7 +80,8 @@ export async function generateMCQs(prerequisites: string[], targetQuestionCount:
       .slice(Math.max(0, previousQuestionsForTopic.size - 5));
 
     try {
-      const prompt = `Generate one unique beginner-level multiple-choice question (MCQ) on the topic "${currentTopic}" that has not been generated before based on its content.
+      const courseContext = courseName ? ` in the context of the course "${courseName}"` : '';
+      const prompt = `Generate one unique beginner-level multiple-choice question (MCQ) on the topic "${currentTopic}" as a prerequisite topic ${courseContext} that has not been generated before based on its content.
 If any programs or code snippets are included, format them using HTML so they are displayed properly and not as raw text.
 Return the response in the following JSON format:
 {
