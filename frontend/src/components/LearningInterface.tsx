@@ -177,10 +177,31 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ onBack }) => {
     setQuizPassed(false);
   };
 
-  const handleQuizSubmit = (score: number, total: number) => {
-    const passed = score >= total * 0.6; // 60% passing threshold
+  const handleQuizSubmit = async (score: number, total: number) => {
+    const passed = (score / total) * 100 >= 65; // 65% passing threshold to match other components
     setQuizPassed(passed);
-    if (passed) {
+
+    try {
+      // Store the quiz score in the backend
+      await axios.post(API_ENDPOINTS.QUIZ_ATTEMPTS, {
+        quizId: currentQuizSessionId,
+        score: (score / total) * 100,
+        passed,
+        topic: data?.topic,
+      });
+
+      console.log('Quiz score stored successfully:', {
+        topic: data?.topic,
+        score: (score / total) * 100,
+        passed
+      });
+
+      // Refresh user data to show updated scores
+      refreshUserData();
+    } catch (err) {
+      console.error('Error recording quiz attempt:', err);
+      alert('Quiz completed, but failed to save score. Please contact support if this persists.');
+      // Still refresh user data in case the score was saved despite the error
       refreshUserData();
     }
   };
