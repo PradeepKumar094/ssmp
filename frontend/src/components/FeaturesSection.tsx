@@ -14,7 +14,7 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({ isDarkMode = false })
       <div className="container">
         <h2 style={{ fontSize: '2.25rem', fontWeight: '800', textAlign: 'center', marginBottom: '4rem' }}>Why Choose LearnPath?</h2>
         <div className="features-section-content">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
               <div style={{ width: '4rem', height: '4rem', backgroundColor: '#6366f1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                 <svg style={{ width: '2rem', height: '2rem', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,8 +53,89 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({ isDarkMode = false })
           </div>
         </div>
       </div>
+
+      <style>{`
+        /* Mobile Responsive Styles for Features Section */
+        @media (max-width: 479px) {
+          .features-section-content {
+            padding: 0 0.5rem;
+          }
+
+          .features-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+          }
+
+          .features-grid .card {
+            padding: 1.5rem !important;
+            margin-bottom: 0;
+          }
+
+          .features-grid .card h3 {
+            font-size: 1.25rem !important;
+            margin-bottom: 0.75rem !important;
+          }
+
+          .features-grid .card p {
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
+          }
+
+          .features-grid .card > div:first-child {
+            width: 3rem !important;
+            height: 3rem !important;
+            margin-bottom: 1rem !important;
+          }
+
+          .features-grid .card > div:first-child svg {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+          }
+        }
+
+        @media (min-width: 480px) and (max-width: 767px) {
+          .features-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+          }
+
+          .features-grid .card {
+            padding: 2rem 1.5rem !important;
+            max-width: 400px;
+            margin: 0 auto;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .features-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 2rem !important;
+          }
+
+          .features-grid .card:last-child {
+            grid-column: 1 / -1;
+            max-width: 400px;
+            margin: 0 auto;
+          }
+        }
+
+        /* Touch optimizations */
+        @media (max-width: 768px) {
+          .features-grid .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          .features-grid .card:hover {
+            transform: translateY(-5px) scale(1.01);
+          }
+
+          .features-grid .card:active {
+            transform: translateY(-2px) scale(0.99);
+          }
+        }
+      `}</style>
     </section>
   );
 };
 
-export default FeaturesSection; 
+export default FeaturesSection;

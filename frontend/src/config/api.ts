@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   PROFILE: `${API_BASE_URL}/api/auth/profile`,
   USERS: `${API_BASE_URL}/api/auth/users`,
   CHECK_ADMIN: `${API_BASE_URL}/api/auth/check-admin`,
+  VERIFY_TOKEN: `${API_BASE_URL}/api/auth/verify-token`,
   UPDATE_USER: (userId: string) => `${API_BASE_URL}/api/auth/users/${userId}`,
   DELETE_USER: (userId: string) => `${API_BASE_URL}/api/auth/users/${userId}`,
   

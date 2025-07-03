@@ -48,8 +48,8 @@ interface AdminHomeContentProps {
 // Professional Admin Home Content Component
 const AdminHomeContent: React.FC<AdminHomeContentProps> = ({ user, chats }) => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  // const [users, setUsers] = useState<User[]>([]);
+  // const [loadingUsers, setLoadingUsers] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalStudents: 0,
     totalChats: 0,
@@ -62,11 +62,11 @@ const AdminHomeContent: React.FC<AdminHomeContentProps> = ({ user, chats }) => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoadingUsers(true);
+        // setLoadingUsers(true);
         const response = await axios.get(API_ENDPOINTS.USERS, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        setUsers(response.data);
+        // setUsers(response.data);
 
         // Calculate statistics
         const students = response.data.filter((u: User) => u.role === 'student');
@@ -95,7 +95,7 @@ const AdminHomeContent: React.FC<AdminHomeContentProps> = ({ user, chats }) => {
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
-        setLoadingUsers(false);
+        // setLoadingUsers(false);
       }
     };
 
@@ -250,7 +250,7 @@ const AdminHomeContent: React.FC<AdminHomeContentProps> = ({ user, chats }) => {
             </button>
           </div>
 
-          <div style={{ space: '16px 0' }}>
+          <div style={{ margin: '16px 0' }}>
             {dashboardStats.recentActivity.length > 0 ? (
               dashboardStats.recentActivity.map((activity, index) => (
                 <div key={index} style={{
@@ -399,6 +399,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   const [darkMode, setDarkMode] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
+  // Debug user role
+  useEffect(() => {
+    console.log('AdminDashboard - Current user:', user);
+    console.log('AdminDashboard - User role:', user.role);
+    console.log('AdminDashboard - Is admin?', user.role === 'admin');
+
+    const token = localStorage.getItem('token');
+    console.log('AdminDashboard - Token exists:', !!token);
+
+    if (user.role !== 'admin') {
+      console.error('AdminDashboard - User is not an admin! Role:', user.role);
+    }
+  }, [user]);
+
   // Get current page from URL
   const getCurrentPage = () => {
     const path = location.pathname;
@@ -412,8 +426,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
   // Support chat state
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [chatInput, setChatInput] = useState('');
-  const [loadingChats, setLoadingChats] = useState(false);
+  // const [chatInput, setChatInput] = useState('');
+  // const [loadingChats, setLoadingChats] = useState(false);
   const [newChatNotification, setNewChatNotification] = useState(false);
   
   // Professional chat support state
@@ -432,9 +446,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const handleThemeToggle = () => setDarkMode((prev) => !prev);
 
-  const handleOpenChatSupport = () => {
-    setShowChatSupport(true);
-  };
+  // const handleOpenChatSupport = () => {
+  //   setShowChatSupport(true);
+  // };
 
   const handleCloseChatSupport = () => {
     setShowChatSupport(false);
@@ -455,7 +469,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       
       // Auto-switch to support page if not already there
       if (activePage !== 'support') {
-        setActivePage('support');
+        navigate('/admin/support');
       }
     });
 
@@ -518,7 +532,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
 
   const fetchChats = async () => {
     try {
-      setLoadingChats(true);
+      // setLoadingChats(true);
       const response = await axios.get(API_ENDPOINTS.CHAT, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -528,43 +542,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Error fetching chats:', error);
     } finally {
-      setLoadingChats(false);
+      // setLoadingChats(false);
     }
   };
 
+  /*
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !selectedChat) return;
-    
+
     if (socket && isConnected) {
       // Use WebSocket for real-time messaging
       socket.emit('send_message', {
         chatId: selectedChat._id,
         message: chatInput
       });
-      
+
       // Add message optimistically
       const newMessage = {
         sender: 'admin' as const,
         message: chatInput,
         timestamp: new Date().toISOString()
       };
-      
-      setChats(prev => prev.map(chat => 
-        chat._id === selectedChat._id 
-          ? { 
-              ...chat, 
+
+      setChats(prev => prev.map(chat =>
+        chat._id === selectedChat._id
+          ? {
+              ...chat,
               messages: [...chat.messages, newMessage],
               lastMessageAt: newMessage.timestamp
             }
           : chat
       ));
-      
+
       setSelectedChat(prev => prev ? {
         ...prev,
         messages: [...prev.messages, newMessage],
         lastMessageAt: newMessage.timestamp
       } : null);
-      
+
       setChatInput('');
     } else {
       // Fallback to REST API
@@ -574,8 +589,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        
-        setChats(prev => prev.map(chat => 
+
+        setChats(prev => prev.map(chat =>
           chat._id === selectedChat._id ? response.data : chat
         ));
         setSelectedChat(response.data);
@@ -586,14 +601,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       }
     }
   };
+  */
 
+  /*
   const handleCloseChat = async (chatId: string) => {
     try {
       const response = await axios.put(API_ENDPOINTS.CHAT_CLOSE(chatId), {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      
-      setChats(prev => prev.map(chat => 
+
+      setChats(prev => prev.map(chat =>
         chat._id === chatId ? response.data : chat
       ));
       if (selectedChat?._id === chatId) {
@@ -614,11 +631,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       minute: '2-digit'
     });
   };
+  */
 
   return (
-    <div className={darkMode ? 'dark' : ''} style={{ minHeight: '100vh', background: 'linear-gradient(90deg, #6366f1 0%, #2dd4bf 100%)' }}>
+    <div
+      className={`admin-container ${darkMode ? 'dark' : ''}`}
+      style={{ minHeight: '100vh', background: 'linear-gradient(90deg, #6366f1 0%, #2dd4bf 100%)' }}>
       {/* Navbar */}
-      <nav className="dashboard-navbar" aria-label="Admin Navigation">
+      <nav className="dashboard-navbar admin-header" aria-label="Admin Navigation">
         <div className="dashboard-navbar-content">
           <div className="dashboard-logo" tabIndex={0} aria-label="LearnPath Home">
             LearnPath
@@ -627,7 +647,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
               Active: {activePage}
             </span>
           </div>
-          <div className="dashboard-nav-actions">
+          <div className="dashboard-nav-actions admin-nav">
             <button
               onClick={() => navigate('/admin')}
               className={`dashboard-nav-btn ${activePage === 'home' ? 'active' : ''}`}
@@ -767,7 +787,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       </nav>
 
       {/* Main Content */}
-      <div className="dashboard-main-content">
+      <div className="dashboard-main-content admin-content">
         <Routes>
           {/* Home Page */}
           <Route path="/" element={<AdminHomeContent user={user} chats={chats} />} />
@@ -780,7 +800,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
             <ChatSupport
               onClose={() => navigate('/admin')}
               userRole="admin"
-              initialChatId={null}
+              initialChatId={undefined}
             />
           } />
         </Routes>
@@ -791,7 +811,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
         <ChatSupport
           onClose={handleCloseChatSupport}
           userRole="admin"
-          initialChatId={initialChatId}
+          initialChatId={initialChatId || undefined}
         />
       )}
 
@@ -799,6 +819,221 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onLogout }) => {
       {showProfile && (
         <UserProfile user={user} onLogout={onLogout} onClose={() => setShowProfile(false)} />
       )}
+
+      {/* Mobile Responsiveness Styles */}
+      <style>{`
+        /* Mobile Responsiveness for Admin Dashboard */
+
+        /* Small Mobile (0-479px) */
+        @media (max-width: 479px) {
+          .admin-container {
+            padding: 16px !important;
+            margin: 0 !important;
+          }
+
+          .admin-header {
+            padding: 16px !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+            align-items: flex-start !important;
+          }
+
+          .admin-header h1 {
+            font-size: 20px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .admin-nav {
+            flex-direction: column !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+
+          .admin-nav button {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+            text-align: left !important;
+          }
+
+          .admin-content {
+            padding: 16px !important;
+            gap: 16px !important;
+          }
+
+          .admin-stats-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+
+          .admin-stat-card {
+            padding: 16px !important;
+            text-align: center !important;
+          }
+
+          .admin-stat-number {
+            font-size: 24px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .admin-stat-label {
+            font-size: 14px !important;
+          }
+
+          .admin-chat-list {
+            max-height: 300px !important;
+            overflow-y: auto !important;
+          }
+
+          .admin-chat-item {
+            padding: 12px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .admin-chat-subject {
+            font-size: 14px !important;
+            margin-bottom: 4px !important;
+          }
+
+          .admin-chat-meta {
+            font-size: 12px !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+          }
+
+          .admin-user-table {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+
+          .admin-user-table table {
+            min-width: 600px !important;
+            font-size: 14px !important;
+          }
+
+          .admin-user-table th,
+          .admin-user-table td {
+            padding: 8px !important;
+            white-space: nowrap !important;
+          }
+
+          .admin-action-buttons {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+
+          .admin-action-buttons button {
+            width: 100% !important;
+            padding: 8px !important;
+            font-size: 14px !important;
+          }
+        }
+
+        /* Large Mobile (480-767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .admin-container {
+            padding: 24px !important;
+          }
+
+          .admin-header {
+            padding: 20px !important;
+            flex-wrap: wrap !important;
+          }
+
+          .admin-header h1 {
+            font-size: 24px !important;
+          }
+
+          .admin-nav {
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+          }
+
+          .admin-nav button {
+            flex: 1 !important;
+            min-width: 120px !important;
+          }
+
+          .admin-content {
+            padding: 24px !important;
+            gap: 20px !important;
+          }
+
+          .admin-stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+          }
+
+          .admin-user-table table {
+            font-size: 15px !important;
+          }
+        }
+
+        /* Tablet (768-1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .admin-container {
+            padding: 32px !important;
+          }
+
+          .admin-header {
+            padding: 24px !important;
+          }
+
+          .admin-content {
+            padding: 32px !important;
+            gap: 24px !important;
+          }
+
+          .admin-stats-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 20px !important;
+          }
+        }
+
+        /* Touch optimizations for mobile */
+        @media (max-width: 768px) {
+          button, .clickable {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-width: 44px;
+            min-height: 44px;
+          }
+
+          button:active, .clickable:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+          }
+
+          input, textarea, select {
+            font-size: 16px; /* Prevents zoom on iOS */
+            -webkit-appearance: none;
+            border-radius: 8px;
+          }
+
+          .scrollable-content {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+          }
+
+          .admin-modal {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin: 20px auto !important;
+            padding: 16px !important;
+          }
+
+          .admin-modal-header {
+            padding: 16px !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          .admin-modal-body {
+            padding: 16px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

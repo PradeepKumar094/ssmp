@@ -58,6 +58,7 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
     setActiveSection(sectionId);
     setIsScrolling(true);
     setUserClicked(true);
+    setIsMobileMenuOpen(false); // Close mobile menu on navigation
 
     const element = document.getElementById(sectionId);
     if (element) {
@@ -77,6 +78,16 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
     }
   };
 
+  const handleAuthClick = () => {
+    setIsMobileMenuOpen(false); // Close mobile menu
+    if (onAuthClick) onAuthClick();
+  };
+
+  const handleStartLearning = () => {
+    setIsMobileMenuOpen(false); // Close mobile menu
+    onStartLearning();
+  };
+
   return (
     <nav className="navbar">
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -84,10 +95,69 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
           LearnPath
         </div>
         {/* Hamburger for mobile */}
-        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(v => !v)} aria-label="Toggle menu" style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', fontSize: '2rem' }}>
-          <span>{isMobileMenuOpen ? '✕' : '☰'}</span>
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(v => !v)}
+          aria-label="Toggle menu"
+          style={{
+            display: 'none',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1.5rem',
+            padding: '0.5rem',
+            borderRadius: '0.375rem',
+            transition: 'all 0.2s ease',
+            color: isDarkMode ? '#e2e8f0' : '#1f2937',
+            minWidth: '44px',
+            minHeight: '44px',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#f3f4f6';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <span style={{
+            display: 'block',
+            transition: 'transform 0.2s ease',
+            transform: isMobileMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)'
+          }}>
+            {isMobileMenuOpen ? '✕' : '☰'}
+          </span>
         </button>
-        <div className={`nav-links-wrapper${isMobileMenuOpen ? ' open' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '0.5rem' }}>
+        {/* Mobile overlay */}
+        {isMobileMenuOpen && (
+          <div
+            className="mobile-nav-overlay active"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 999,
+              opacity: 1,
+              visibility: 'visible'
+            }}
+          />
+        )}
+
+        <div
+          className={`nav-links-wrapper${isMobileMenuOpen ? ' open' : ''}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2rem',
+            marginTop: '0.5rem',
+            zIndex: 1001
+          }}
+        >
           <a 
             href="#home" 
             className={`nav-link ${activeSection === 'home' ? 'active' : ''}`}
@@ -110,8 +180,8 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
             About
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button 
-              onClick={onAuthClick}
+            <button
+              onClick={handleAuthClick}
               style={{ 
                 background: 'none', 
                 border: 'none', 
@@ -136,7 +206,7 @@ const Navbar: React.FC<NavbarProps> = ({ isDarkMode, toggleTheme, onStartLearnin
             <a 
               href="#try" 
               className={`nav-link ${activeSection === 'try' ? 'active' : ''}`}
-              onClick={(e) => { e.preventDefault(); onStartLearning(); }}
+              onClick={(e) => { e.preventDefault(); handleStartLearning(); }}
             >
               Try LearnPath Now
             </a>

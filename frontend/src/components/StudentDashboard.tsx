@@ -8,6 +8,13 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { v4 as uuidv4 } from 'uuid';
 
+interface WeeklyContent {
+  week: number;
+  topics: string[];
+  tasks?: string[];
+  description?: string;
+}
+
 interface User {
   id: string;
   username: string;
@@ -16,7 +23,7 @@ interface User {
   topics?: string[];
   prerequisites?: { topic: string; prerequisites: string[] }[];
   quizScores?: { topic: string; score: number; date: string }[];
-  learningPaths?: { topic: string; weeks: number; level: string; durationPerDay: string; path: any[]; generatedAt: string }[];
+  learningPaths?: { topic: string; weeks: number; level: string; durationPerDay: string; path: WeeklyContent[]; generatedAt: string }[];
   avatar?: string;
 }
 
@@ -27,7 +34,7 @@ interface Notification {
   message: string;
   isRead: boolean;
   createdAt: string;
-  relatedData?: any;
+  relatedData?: Record<string, unknown>;
 }
 
 interface StudentDashboardProps {
@@ -58,11 +65,11 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
   const [showPrereqModal, setShowPrereqModal] = useState(false);
   const [topic, setTopic] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{ topic: string; prerequisites: string[] } | null>(null);
   const [isAcknowledged, setIsAcknowledged] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
   const [conceptSummary, setConceptSummary] = useState('');
-  const [mcqs, setMcqs] = useState<any>(null);
+  const [mcqs, setMcqs] = useState<Array<{ id: string; topic: string; question: string; options: string[]; answer: string }> | null>(null);
   const [quizLoading, setQuizLoading] = useState(false);
   const [currentQuizSessionId, setCurrentQuizSessionId] = useState<string>('');
   const [canAttempt, setCanAttempt] = useState(true);
@@ -153,7 +160,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
     // If it's a chat-related notification, open the chat
     if (notification.type === 'chat_response' && notification.relatedData?.chatId) {
       setShowChatSupport(true);
-      setInitialChatId(notification.relatedData.chatId);
+      setInitialChatId(notification.relatedData.chatId as string);
     }
   };
 
@@ -266,9 +273,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
     try {
       const res = await axios.post(API_ENDPOINTS.PREREQUISITES, { topic });
       setData(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching prerequisites:', err);
-      if (err.response?.status === 401) {
+      if ((err as { response?: { status?: number } }).response?.status === 401) {
         alert('Authentication error. Please log in again.');
       } else {
         alert('Failed to fetch prerequisites. Please try again.');
@@ -330,7 +337,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
     }
   };
 
-  const handleQuizRestart = async (score: number, passed: boolean) => {
+  const handleQuizRestart = async (_score: number, passed: boolean) => {
     if (passed) {
       setQuizPassed(true);
       return;
@@ -379,7 +386,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
       });
       const updatedUser = response.data;
       localStorage.setItem('user', JSON.stringify(updatedUser));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error refreshing user data:', error);
     }
   };
@@ -460,26 +467,30 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
     }
   ];
 
+  /*
   const handleCourseSelect = (courseTitle: string) => {
     // Navigate to the learning interface with the selected course
     onStartLearning();
     // Store the course topic for the learning process
     localStorage.setItem('selectedTopicForQuiz', courseTitle);
   };
+  */
 
   return (
     <div className={darkMode ? 'dark' : ''} style={{ minHeight: '100vh', background: 'linear-gradient(90deg, #6366f1 0%, #2dd4bf 100%)' }}>
       {/* Navbar */}
-      <nav style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '18px 40px',
-        background: '#fff',
-        borderBottom: '1px solid #e5e7eb',
-        position: 'relative',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-      }}>
+      <nav
+        className="dashboard-nav"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '18px 40px',
+          background: '#fff',
+          borderBottom: '1px solid #e5e7eb',
+          position: 'relative',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+        }}>
         <div style={{ fontWeight: 700, fontSize: 22, color: '#18181b' }}>LearnPath</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <button onClick={() => setActivePage('home')} style={{
@@ -739,12 +750,14 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
       </nav>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: 1200,
-        margin: '60px auto 0',
-        padding: '0 20px',
-        minHeight: 400,
-      }}>
+      <div
+        className="dashboard-content"
+        style={{
+          maxWidth: 1200,
+          margin: '60px auto 0',
+          padding: '0 20px',
+          minHeight: 400,
+        }}>
         {/* Home Page */}
         {activePage === 'home' && (
           <div style={{
@@ -874,15 +887,18 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
             </div>
 
             {/* Courses Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-              gap: 24,
+            <div
+              className="course-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                gap: 24,
               marginBottom: 40,
             }}>
               {availableCourses.map((course, index) => (
                 <div
                   key={course.id}
+                  className="course-card clickable"
                   style={{
                     background: darkMode ? '#1f2937' : '#ffffff',
                     borderRadius: 20,
@@ -1043,25 +1059,29 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
               </p>
               
               {/* Stats Overview */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 24,
+              <div
+                className="stats-grid"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: 24,
                 marginBottom: 32,
               }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: 16,
-                  padding: '24px 20px',
-                  color: 'white',
-                  textAlign: 'center',
-                  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
-                  animation: 'slideInUp 0.6s ease-out 0.1s both',
-                }}>
-                  <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
+                <div
+                  className="stat-card"
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: 16,
+                    padding: '24px 20px',
+                    color: 'white',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                    animation: 'slideInUp 0.6s ease-out 0.1s both',
+                  }}>
+                  <div className="stat-number" style={{ fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
                     {user.topics?.length || 0}
                   </div>
-                  <div style={{ fontSize: 14, opacity: 0.9 }}>Topics Studied</div>
+                  <div className="stat-label" style={{ fontSize: 14, opacity: 0.9 }}>Topics Studied</div>
                 </div>
                 
                 <div style={{
@@ -2260,7 +2280,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                               gap: 12,
                             }}>
-                              {learningPath.path.slice(0, 6).map((week: any, weekIndex: number) => (
+                              {learningPath.path.slice(0, 6).map((week: WeeklyContent, weekIndex: number) => (
                                 <div key={weekIndex} style={{
                                   background: darkMode ? '#4b5563' : '#ffffff',
                                   borderRadius: 8,
@@ -2313,31 +2333,35 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
 
       {/* Prerequisites Modal */}
       {showPrereqModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
           padding: 20,
         }}>
-          <div style={{
-            background: darkMode ? '#1f2937' : '#ffffff',
-            borderRadius: 16,
-            padding: 32,
-            maxWidth: 1200,
-            maxHeight: '95vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-            border: '1px solid',
-            borderColor: darkMode ? '#374151' : '#e5e7eb',
-            width: '100%',
-          }}>
+          <div
+            className="modal-content scrollable-content"
+            style={{
+              background: darkMode ? '#1f2937' : '#ffffff',
+              borderRadius: 16,
+              padding: 32,
+              maxWidth: 1200,
+              maxHeight: '95vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              border: '1px solid',
+              borderColor: darkMode ? '#374151' : '#e5e7eb',
+              width: '100%',
+            }}>
             {/* Close Button */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
               <button
@@ -2383,7 +2407,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                     borderRadius: '8px',
                     marginBottom: '20px',
                   }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 />
 
                 {connectionStatus === 'disconnected' && (
@@ -2453,9 +2477,13 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                     Prerequisites for: {data.topic}
                   </h2>
 
-                  <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+                  <div
+                    className="prerequisites-layout"
+                    style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
                     {/* Left side - Prerequisite Summary */}
-                    <div style={{ flex: '1', minWidth: '300px' }}>
+                    <div
+                      className="prerequisites-list"
+                      style={{ flex: '1', minWidth: '300px' }}>
                       <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
                         Prerequisites Summary
                       </h3>
@@ -2516,7 +2544,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                     </div>
 
                     {/* Right side - Graph */}
-                    <div style={{ flex: '1', minWidth: '400px' }}>
+                    <div
+                      className="prerequisites-graph"
+                      style={{ flex: '1', minWidth: '400px' }}>
                       <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
                         Learning Path Visualization
                       </h3>
@@ -2525,7 +2555,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                   </div>
 
                   {!isAcknowledged && (
-                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <div
+                      className="action-buttons"
+                      style={{ textAlign: 'center', marginTop: '20px' }}>
                       <button
                         onClick={() => setIsAcknowledged(true)}
                         style={{
@@ -2544,7 +2576,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
                   )}
 
                   {isAcknowledged && !mcqs && (
-                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <div
+                      className="action-buttons"
+                      style={{ textAlign: 'center', marginTop: '20px' }}>
                       <button
                         onClick={() => fetchMCQs()}
                         disabled={quizLoading}
@@ -2636,6 +2670,296 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ user, onLogout, onS
           to {
             opacity: 1;
             transform: translateX(0);
+          }
+        }
+
+        /* Mobile Responsiveness for Student Dashboard */
+
+        /* Small Mobile (0-479px) */
+        @media (max-width: 479px) {
+          .dashboard-nav {
+            padding: 12px 16px !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+            align-items: flex-start !important;
+          }
+
+          .dashboard-nav > div:first-child {
+            font-size: 18px !important;
+          }
+
+          .dashboard-nav > div:last-child {
+            gap: 16px !important;
+            flex-wrap: wrap !important;
+            width: 100% !important;
+            justify-content: flex-start !important;
+          }
+
+          .dashboard-nav button {
+            padding: 8px 16px !important;
+            font-size: 14px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+          }
+
+          .dashboard-content {
+            padding: 16px !important;
+            gap: 16px !important;
+          }
+
+          .dashboard-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+
+          .dashboard-card {
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+          }
+
+          .dashboard-card h3 {
+            font-size: 18px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .course-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+
+          .course-card {
+            padding: 16px !important;
+          }
+
+          .course-card h4 {
+            font-size: 16px !important;
+          }
+
+          .course-card p {
+            font-size: 14px !important;
+          }
+
+          .progress-bar {
+            height: 6px !important;
+          }
+
+          .stats-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+
+          .stat-card {
+            padding: 16px !important;
+            text-align: center !important;
+          }
+
+          .stat-number {
+            font-size: 24px !important;
+          }
+
+          .stat-label {
+            font-size: 12px !important;
+          }
+
+          .modal-content {
+            width: 95% !important;
+            max-width: 95% !important;
+            margin: 20px auto !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+          }
+
+          .modal-header {
+            padding: 16px !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            align-items: flex-start !important;
+          }
+
+          .modal-body {
+            padding: 16px !important;
+          }
+
+          .prerequisites-layout {
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+
+          .prerequisites-list {
+            width: 100% !important;
+            margin-bottom: 16px !important;
+          }
+
+          .prerequisites-graph {
+            width: 100% !important;
+            height: 250px !important;
+          }
+
+          .action-buttons {
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+
+          .action-buttons button {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+          }
+        }
+
+        /* Large Mobile (480-767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .dashboard-nav {
+            padding: 16px 24px !important;
+            flex-wrap: wrap !important;
+          }
+
+          .dashboard-nav > div:last-child {
+            gap: 20px !important;
+          }
+
+          .dashboard-nav button {
+            padding: 10px 20px !important;
+            font-size: 15px !important;
+          }
+
+          .dashboard-content {
+            padding: 24px !important;
+            gap: 20px !important;
+          }
+
+          .dashboard-grid {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+          }
+
+          .course-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+            gap: 16px !important;
+          }
+
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+          }
+
+          .modal-content {
+            width: 90% !important;
+            max-width: 500px !important;
+          }
+
+          .prerequisites-layout {
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+
+          .prerequisites-graph {
+            height: 300px !important;
+          }
+        }
+
+        /* Tablet (768-1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .dashboard-nav {
+            padding: 18px 32px !important;
+          }
+
+          .dashboard-content {
+            padding: 32px !important;
+            gap: 24px !important;
+          }
+
+          .dashboard-grid {
+            grid-template-columns: 1fr !important;
+            gap: 24px !important;
+          }
+
+          .course-grid {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+            gap: 20px !important;
+          }
+
+          .stats-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 20px !important;
+          }
+
+          .modal-content {
+            width: 85% !important;
+            max-width: 600px !important;
+          }
+
+          .prerequisites-layout {
+            gap: 24px !important;
+          }
+
+          .prerequisites-list {
+            width: 45% !important;
+          }
+
+          .prerequisites-graph {
+            width: 55% !important;
+            height: 350px !important;
+          }
+        }
+
+        /* Desktop (1024px+) */
+        @media (min-width: 1024px) {
+          .dashboard-grid {
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
+          }
+
+          .course-grid {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+          }
+
+          .stats-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+
+          .prerequisites-layout {
+            flex-direction: row !important;
+          }
+
+          .prerequisites-list {
+            width: 40% !important;
+          }
+
+          .prerequisites-graph {
+            width: 60% !important;
+            height: 400px !important;
+          }
+        }
+
+        /* Touch optimizations for mobile */
+        @media (max-width: 768px) {
+          button, .clickable {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-width: 44px;
+            min-height: 44px;
+          }
+
+          button:active, .clickable:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+          }
+
+          input, textarea, select {
+            font-size: 16px; /* Prevents zoom on iOS */
+            -webkit-appearance: none;
+            border-radius: 8px;
+          }
+
+          .modal-overlay {
+            padding: 16px;
+          }
+
+          .scrollable-content {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
           }
         }
       `}</style>

@@ -28,7 +28,7 @@ interface StudentCoursesProps {
   onCourseSelect: (courseTitle: string) => void;
 }
 
-const StudentCourses: React.FC<StudentCoursesProps> = ({ user, onCourseSelect }) => {
+const StudentCourses: React.FC<StudentCoursesProps> = ({ onCourseSelect }) => {
   // Course data from StudentDashboard
   const availableCourses: Course[] = [
     {

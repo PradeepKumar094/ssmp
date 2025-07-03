@@ -25,12 +25,13 @@ interface PrerequisiteData {
 
 interface MCQ {
   id: string;
+  topic: string;
   question: string;
   options: string[];
-  correctAnswer: number;
+  answer: string;
 }
 
-const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) => {
+const LearningInterface: React.FC<LearningInterfaceProps> = ({ onBack }) => {
   const [topic, setTopic] = useState('');
   const [data, setData] = useState<PrerequisiteData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,10 +41,10 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
   const [mcqs, setMcqs] = useState<MCQ[] | null>(null);
   const [quizLoading, setQuizLoading] = useState(false);
   const [currentQuizSessionId, setCurrentQuizSessionId] = useState<string | null>(null);
-  const [canAttempt, setCanAttempt] = useState(true);
-  const [attemptsToday, setAttemptsToday] = useState(0);
+  const [canAttempt] = useState(true);
+  const [attemptsToday] = useState(0);
   const [quizPassed, setQuizPassed] = useState(false);
-  const { connectionStatus, testConnection } = useWebSocket();
+  const { connectionStatus } = useWebSocket();
 
   // Check for stored topic from "My Courses" and auto-start quiz
   useEffect(() => {
@@ -176,7 +177,8 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
     setQuizPassed(false);
   };
 
-  const handleQuizSubmit = (passed: boolean) => {
+  const handleQuizSubmit = (score: number, total: number) => {
+    const passed = score >= total * 0.6; // 60% passing threshold
     setQuizPassed(passed);
     if (passed) {
       refreshUserData();
@@ -185,23 +187,29 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(90deg, #6366f1 0%, #2dd4bf 100%)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div
+        className="learning-container"
+        style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
+        <div
+          className="learning-header"
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h1 style={{ color: 'white', fontSize: '2rem', fontWeight: 'bold' }}>LearnPath</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             {/* Connection Status Indicator */}
-            <div style={{
+            <div
+              className="connection-status"
+              style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               padding: '8px 12px',
               background: connectionStatus === 'connected' ? 'rgba(16, 185, 129, 0.2)' :
-                         connectionStatus === 'checking' ? 'rgba(245, 158, 11, 0.2)' :
+                         connectionStatus === 'connecting' ? 'rgba(245, 158, 11, 0.2)' :
                          'rgba(239, 68, 68, 0.2)',
               borderRadius: '8px',
               border: '1px solid',
               borderColor: connectionStatus === 'connected' ? '#10b981' :
-                         connectionStatus === 'checking' ? '#f59e0b' :
+                         connectionStatus === 'connecting' ? '#f59e0b' :
                          '#ef4444',
             }}>
               <div style={{
@@ -209,9 +217,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 height: '8px',
                 borderRadius: '50%',
                 background: connectionStatus === 'connected' ? '#10b981' :
-                           connectionStatus === 'checking' ? '#f59e0b' :
+                           connectionStatus === 'connecting' ? '#f59e0b' :
                            '#ef4444',
-                animation: connectionStatus === 'checking' ? 'pulse 1s infinite' : 'none',
+                animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none',
               }} />
               <span style={{
                 color: 'white',
@@ -219,26 +227,10 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 fontWeight: '500',
               }}>
                 {connectionStatus === 'connected' ? 'Connected' :
-                 connectionStatus === 'checking' ? 'Checking...' :
+                 connectionStatus === 'connecting' ? 'Connecting...' :
                  'Disconnected'}
               </span>
-              {connectionStatus === 'disconnected' && (
-                <button
-                  onClick={testConnection}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: '4px 8px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    marginLeft: '8px',
-                  }}
-                >
-                  Retry
-                </button>
-              )}
+              {/* Connection retry functionality not available */}
             </div>
             
             <button
@@ -258,7 +250,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
           </div>
         </div>
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+        <div
+          className="learning-content"
+          style={{ background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
           <div style={{ marginBottom: '30px' }}>
             <input
               type="text"
@@ -268,6 +262,7 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 setTopic(e.target.value);
               }}
               placeholder="Enter a topic you want to learn..."
+              className="topic-input"
               style={{
                 width: '100%',
                 padding: '15px',
@@ -276,7 +271,7 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 borderRadius: '8px',
                 marginBottom: '20px',
               }}
-              onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
             
             {connectionStatus === 'disconnected' && (
@@ -301,6 +296,7 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
             <button
               onClick={handleSubmit}
               disabled={loading || connectionStatus === 'disconnected'}
+              className="submit-button"
               style={{
                 background: connectionStatus === 'disconnected' ? '#9ca3af' : '#6366f1',
                 color: 'white',
@@ -322,9 +318,13 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 Prerequisites for: {data.topic}
               </h2>
               
-              <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+              <div
+                className="prerequisites-layout"
+                style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
                 {/* Left side - Prerequisite Summary */}
-                <div style={{ flex: '1', minWidth: '300px' }}>
+                <div
+                  className="prerequisites-list"
+                  style={{ flex: '1', minWidth: '300px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
                     Prerequisites Summary
                   </h3>
@@ -341,10 +341,14 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                     </p>
                     <ol style={{ paddingLeft: '20px', color: '#374151' }}>
                       {data.prerequisites.map((prereq, index) => (
-                        <li key={index} style={{ marginBottom: '10px' }}>
+                        <li
+                          key={index}
+                          className="concept-item"
+                          style={{ marginBottom: '10px' }}>
                           <strong>{prereq}</strong>
                           <button
                             onClick={() => handleConceptClick(prereq)}
+                            className="clickable"
                             style={{
                               background: 'none',
                               border: 'none',
@@ -361,7 +365,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                       ))}
                     </ol>
                     {selectedConcept && (
-                      <div style={{ marginTop: '20px', padding: '15px', background: '#e0f2fe', borderRadius: '6px', border: '1px solid #0288d1' }}>
+                      <div
+                        className="concept-summary"
+                        style={{ marginTop: '20px', padding: '15px', background: '#e0f2fe', borderRadius: '6px', border: '1px solid #0288d1' }}>
                         <h4 style={{ marginBottom: '10px', color: '#0277bd' }}>{selectedConcept}</h4>
                         <p style={{ color: '#01579b', lineHeight: '1.5' }}>{conceptSummary}</p>
                         <button
@@ -385,7 +391,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
                 </div>
 
                 {/* Right side - Graph */}
-                <div style={{ flex: '1', minWidth: '400px' }}>
+                <div
+                  className="prerequisites-graph"
+                  style={{ flex: '1', minWidth: '400px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '15px', color: '#374151' }}>
                     Learning Path Visualization
                   </h3>
@@ -394,7 +402,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
               </div>
 
               {!isAcknowledged && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <div
+                  className="action-buttons"
+                  style={{ textAlign: 'center', marginTop: '20px' }}>
                   <button
                     onClick={() => setIsAcknowledged(true)}
                     style={{
@@ -413,7 +423,9 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
               )}
 
               {isAcknowledged && !mcqs && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <div
+                  className="action-buttons"
+                  style={{ textAlign: 'center', marginTop: '20px' }}>
                   <button
                     onClick={() => fetchMCQs()}
                     disabled={quizLoading}
@@ -436,7 +448,7 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
               {mcqs && (
                 <Quiz
                   mcqs={mcqs}
-                  quizId={currentQuizSessionId}
+                  quizId={currentQuizSessionId || ''}
                   onRestartQuiz={handleQuizRestart}
                   onSubmitQuiz={handleQuizSubmit}
                   canAttempt={canAttempt}
@@ -451,6 +463,212 @@ const LearningInterface: React.FC<LearningInterfaceProps> = ({ user, onBack }) =
           )}
         </div>
       </div>
+
+      {/* Mobile Responsiveness Styles */}
+      <style>{`
+        /* Mobile Responsiveness for Learning Interface */
+
+        /* Small Mobile (0-479px) */
+        @media (max-width: 479px) {
+          .learning-container {
+            padding: 16px !important;
+            margin: 0 !important;
+          }
+
+          .learning-header {
+            padding: 16px !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+            align-items: flex-start !important;
+          }
+
+          .learning-header h1 {
+            font-size: 20px !important;
+            margin-bottom: 8px !important;
+          }
+
+          .learning-header button {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+          }
+
+          .learning-content {
+            padding: 16px !important;
+            gap: 16px !important;
+          }
+
+          .topic-input {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            margin-bottom: 16px !important;
+          }
+
+          .submit-button {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+          }
+
+          .prerequisites-layout {
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+
+          .prerequisites-list {
+            width: 100% !important;
+            margin-bottom: 16px !important;
+          }
+
+          .prerequisites-graph {
+            width: 100% !important;
+            height: 250px !important;
+          }
+
+          .concept-item {
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+          }
+
+          .concept-summary {
+            padding: 12px !important;
+            font-size: 14px !important;
+          }
+
+          .action-buttons {
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+
+          .action-buttons button {
+            width: 100% !important;
+            padding: 12px !important;
+            font-size: 16px !important;
+            min-height: 44px !important;
+          }
+
+          .connection-status {
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+            text-align: center !important;
+          }
+        }
+
+        /* Large Mobile (480-767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          .learning-container {
+            padding: 24px !important;
+          }
+
+          .learning-header {
+            padding: 20px !important;
+            flex-wrap: wrap !important;
+          }
+
+          .learning-header h1 {
+            font-size: 24px !important;
+          }
+
+          .learning-content {
+            padding: 24px !important;
+            gap: 20px !important;
+          }
+
+          .prerequisites-layout {
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+
+          .prerequisites-graph {
+            height: 300px !important;
+          }
+
+          .topic-input {
+            padding: 14px !important;
+            font-size: 16px !important;
+          }
+
+          .submit-button {
+            padding: 14px 28px !important;
+            font-size: 16px !important;
+          }
+        }
+
+        /* Tablet (768-1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .learning-container {
+            padding: 32px !important;
+          }
+
+          .learning-header {
+            padding: 24px !important;
+          }
+
+          .learning-content {
+            padding: 32px !important;
+            gap: 24px !important;
+          }
+
+          .prerequisites-layout {
+            gap: 24px !important;
+          }
+
+          .prerequisites-list {
+            width: 45% !important;
+          }
+
+          .prerequisites-graph {
+            width: 55% !important;
+            height: 350px !important;
+          }
+        }
+
+        /* Desktop (1024px+) */
+        @media (min-width: 1024px) {
+          .prerequisites-layout {
+            flex-direction: row !important;
+          }
+
+          .prerequisites-list {
+            width: 40% !important;
+          }
+
+          .prerequisites-graph {
+            width: 60% !important;
+            height: 400px !important;
+          }
+        }
+
+        /* Touch optimizations for mobile */
+        @media (max-width: 768px) {
+          button, .clickable {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-width: 44px;
+            min-height: 44px;
+          }
+
+          button:active, .clickable:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+          }
+
+          input, textarea, select {
+            font-size: 16px; /* Prevents zoom on iOS */
+            -webkit-appearance: none;
+            border-radius: 8px;
+          }
+
+          .scrollable-content {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+          }
+        }
+      `}</style>
     </div>
   );
 };

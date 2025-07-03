@@ -40,10 +40,46 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
   useEffect(() => {
     setLoadingStudents(true);
     setStudentsError('');
-    
+
     const token = localStorage.getItem('token');
-    console.log('Fetching students with token:', token ? 'Token exists' : 'No token');
-    
+    const userStr = localStorage.getItem('user');
+    console.log('=== DEBUGGING ADMIN ACCESS ===');
+    console.log('Token exists:', !!token);
+    console.log('Token value:', token);
+    console.log('User from localStorage:', userStr);
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        console.log('Parsed user object:', user);
+        console.log('User role from localStorage:', user.role);
+        console.log('Is admin according to localStorage?', user.role === 'admin');
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e);
+      }
+    }
+
+    // Let's also decode the JWT token to see what's inside
+    if (token) {
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('JWT token payload:', payload);
+          console.log('Role in JWT token:', payload.role);
+          console.log('User ID in JWT token:', payload.id);
+        }
+      } catch (e) {
+        console.error('Error decoding JWT token:', e);
+      }
+    }
+
+    if (!token) {
+      setStudentsError('No authentication token found. Please log in again.');
+      setLoadingStudents(false);
+      return;
+    }
+
     axios.get(API_ENDPOINTS.USERS, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -56,7 +92,14 @@ const StudentManagement: React.FC<StudentManagementProps> = ({ darkMode }) => {
       .catch((error) => {
         console.error('Error fetching students:', error);
         console.error('Error response:', error.response);
-        setStudentsError(`Failed to fetch students: ${error.response?.data?.message || error.message}`);
+
+        if (error.response?.status === 403) {
+          setStudentsError('Access denied: You do not have admin privileges. Please make sure you are logged in as an admin user.');
+        } else if (error.response?.status === 401) {
+          setStudentsError('Authentication failed. Please log in again.');
+        } else {
+          setStudentsError(`Failed to fetch students: ${error.response?.data?.message || error.message}`);
+        }
       })
       .finally(() => setLoadingStudents(false));
   }, []);

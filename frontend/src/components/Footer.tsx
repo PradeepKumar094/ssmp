@@ -11,7 +11,7 @@ const Footer: React.FC<FooterProps> = ({ isDarkMode = false }) => {
       color: 'white',
       padding: '3rem 1.5rem'
     }}>
-      <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+      <div className="container footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
         <div>
           <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem' }}>LearnPath</h3>
           <p style={{ color: '#9ca3af' }}>Your Journey to Mastery</p>
@@ -42,11 +42,168 @@ const Footer: React.FC<FooterProps> = ({ isDarkMode = false }) => {
           </div>
         </div>
       </div>
-      <div style={{ textAlign: 'center', color: '#6b7280', marginTop: '2rem' }}>
+      <div className="footer-copyright" style={{ textAlign: 'center', color: '#6b7280', marginTop: '2rem' }}>
         &copy; 2025 LearnPath Made with ❤️ by Students for students . All rights reserved.
       </div>
+
+      <style>{`
+        /* Footer Mobile Responsive Styles */
+        @media (max-width: 479px) {
+          .footer-content {
+            padding: 2rem 1rem !important;
+          }
+
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
+            text-align: center !important;
+          }
+
+          .footer-grid > div {
+            padding: 0 0.5rem;
+          }
+
+          .footer-grid h3 {
+            font-size: 1.125rem !important;
+            margin-bottom: 0.75rem !important;
+          }
+
+          .footer-grid ul {
+            gap: 0.375rem !important;
+          }
+
+          .footer-grid ul li a {
+            font-size: 0.9rem !important;
+            padding: 0.25rem 0.5rem !important;
+            border-radius: 0.375rem !important;
+            display: inline-block !important;
+            min-height: 44px !important;
+            min-width: 44px !important;
+            line-height: 1.5 !important;
+          }
+
+          .footer-grid p {
+            font-size: 0.9rem !important;
+            margin-bottom: 0.5rem !important;
+          }
+
+          .footer-grid > div:last-child > div {
+            justify-content: center !important;
+            gap: 1.5rem !important;
+            margin-top: 1.5rem !important;
+          }
+
+          .footer-grid > div:last-child > div a {
+            padding: 0.75rem !important;
+            border-radius: 0.5rem !important;
+            background: rgba(99, 102, 241, 0.1) !important;
+            min-height: 44px !important;
+            min-width: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+
+          .footer-grid > div:last-child > div a svg {
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+          }
+
+          .footer-copyright {
+            margin-top: 1.5rem !important;
+            font-size: 0.875rem !important;
+            padding: 0 1rem !important;
+            line-height: 1.5 !important;
+          }
+        }
+
+        @media (min-width: 480px) and (max-width: 767px) {
+          .footer-content {
+            padding: 2.5rem 1.5rem !important;
+          }
+
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+            text-align: center !important;
+          }
+
+          .footer-grid h3 {
+            font-size: 1.25rem !important;
+          }
+
+          .footer-grid ul li a {
+            padding: 0.375rem 0.75rem !important;
+            border-radius: 0.5rem !important;
+            display: inline-block !important;
+          }
+
+          .footer-grid > div:last-child > div {
+            justify-content: center !important;
+          }
+
+          .footer-grid > div:last-child > div a {
+            padding: 0.5rem !important;
+            border-radius: 0.5rem !important;
+            background: rgba(99, 102, 241, 0.05) !important;
+          }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .footer-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 2rem !important;
+          }
+
+          .footer-grid > div:first-child {
+            grid-column: 1 / -1;
+            text-align: center;
+          }
+        }
+
+        /* Touch optimizations */
+        @media (max-width: 768px) {
+          .footer-grid ul li a,
+          .footer-grid > div:last-child > div a {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+          }
+
+          .footer-grid ul li a:hover,
+          .footer-grid ul li a:focus {
+            background: rgba(99, 102, 241, 0.1) !important;
+            color: #6366f1 !important;
+            transform: translateY(-1px);
+          }
+
+          .footer-grid ul li a:active {
+            transform: translateY(0);
+          }
+
+          .footer-grid > div:last-child > div a:hover,
+          .footer-grid > div:last-child > div a:focus {
+            background: rgba(99, 102, 241, 0.2) !important;
+            color: #6366f1 !important;
+            transform: scale(1.1);
+          }
+
+          .footer-grid > div:last-child > div a:active {
+            transform: scale(0.95);
+          }
+        }
+
+        /* Improved accessibility */
+        @media (max-width: 768px) {
+          .footer-grid ul li a:focus,
+          .footer-grid > div:last-child > div a:focus {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+          }
+        }
+      `}</style>
     </footer>
   );
 };
 
-export default Footer; 
+export default Footer;

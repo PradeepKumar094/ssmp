@@ -108,6 +108,104 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning, isDarkMode =
           </div>
         </div>
         <style>{`
+          /* Mobile First Responsive Design */
+
+          /* Small Mobile (0-479px) */
+          @media (max-width: 479px) {
+            .hero-content {
+              padding: 1rem !important;
+              gap: 1.5rem !important;
+            }
+            .hero-title {
+              font-size: 1.75rem !important;
+              line-height: 1.2 !important;
+              text-align: center !important;
+              margin-bottom: 1rem !important;
+            }
+            .hero-description {
+              font-size: 1rem !important;
+              text-align: center !important;
+              margin-bottom: 1.5rem !important;
+            }
+            .hero-text {
+              text-align: center !important;
+              margin-bottom: 1.5rem !important;
+            }
+            .hero-text > div {
+              flex-direction: column !important;
+              gap: 0.75rem !important;
+            }
+            .hero-text button {
+              width: 100% !important;
+              padding: 1rem !important;
+              font-size: 1.1rem !important;
+            }
+            .hero-image {
+              width: 100% !important;
+              max-width: 100% !important;
+            }
+            .hero-image img {
+              height: 16rem !important;
+            }
+            .hero-image > div:last-child {
+              bottom: -1rem !important;
+              right: -1rem !important;
+              padding: 0.75rem !important;
+            }
+            .hero-image > div:last-child span {
+              font-size: 0.75rem !important;
+            }
+          }
+
+          /* Large Mobile (480-767px) */
+          @media (min-width: 480px) and (max-width: 767px) {
+            .hero-content {
+              padding: 1.5rem !important;
+              gap: 2rem !important;
+            }
+            .hero-title {
+              font-size: 2.25rem !important;
+              text-align: center !important;
+            }
+            .hero-description {
+              font-size: 1.125rem !important;
+              text-align: center !important;
+            }
+            .hero-text {
+              text-align: center !important;
+            }
+            .hero-text > div {
+              justify-content: center !important;
+            }
+            .hero-text button {
+              padding: 1rem 2rem !important;
+            }
+            .hero-image img {
+              height: 20rem !important;
+            }
+          }
+
+          /* Tablet (768-899px) */
+          @media (min-width: 768px) and (max-width: 899px) {
+            .hero-content {
+              gap: 2.5rem !important;
+            }
+            .hero-title {
+              font-size: 2.5rem !important;
+              text-align: center !important;
+            }
+            .hero-description {
+              text-align: center !important;
+            }
+            .hero-text {
+              text-align: center !important;
+            }
+            .hero-text > div {
+              justify-content: center !important;
+            }
+          }
+
+          /* Desktop (900px+) */
           @media (min-width: 900px) {
             .hero-content {
               flex-direction: row !important;
@@ -120,6 +218,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning, isDarkMode =
               max-width: 600px !important;
               width: 50% !important;
               margin-bottom: 0 !important;
+            }
+            .hero-title {
+              text-align: left !important;
+            }
+            .hero-description {
+              text-align: left !important;
+            }
+            .hero-text > div {
+              justify-content: flex-start !important;
             }
             .hero-image {
               width: 50% !important;
@@ -134,8 +241,22 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartLearning, isDarkMode =
           .dark .hero-description {
             color: #94a3af !important;
           }
+          .dark .hero-section .image-container + div {
+            background-color: var(--card-bg-dark) !important;
+          }
           .dark .hero-section .image-container + div span {
             color: #e2e8f0 !important;
+          }
+
+          /* Touch optimizations */
+          @media (max-width: 768px) {
+            .hero-text button {
+              touch-action: manipulation;
+              -webkit-tap-highlight-color: transparent;
+            }
+            .hero-text button:active {
+              transform: scale(0.98);
+            }
           }
         `}</style>
       </div>

@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import Graph from './components/Graph';
-import Quiz from './components/Quiz';
+// import Graph from './components/Graph'; // Unused import
+// import Quiz from './components/Quiz'; // Unused import
 import LandingPage from './components/LandingPage';
 import AuthForms from './components/AuthForms';
-import UserProfile from './components/UserProfile';
-import { v4 as uuidv4 } from 'uuid';
+// import UserProfile from './components/UserProfile'; // Unused import
+// import { v4 as uuidv4 } from 'uuid'; // Unused import
 import AdminDashboard from './components/AdminDashboard';
 import StudentDashboard from './components/StudentDashboard';
 import LearningInterfaceComponent from './components/LearningInterface';
 import { WebSocketProvider, useWebSocket } from './contexts/WebSocketContext';
-import { API_ENDPOINTS, API_BASE_URL } from './config/api';
+// import { API_ENDPOINTS, API_BASE_URL } from './config/api'; // Unused import
 import GlobalStyles from './components/GlobalStyles';
 
 
-// Type definitions
+// Type definitions (unused - commented out)
+/*
 type PrereqData = {
   topic: string;
   prerequisites: string[];
@@ -28,6 +29,7 @@ type MCQ = {
   options: string[];
   answer: string;
 };
+*/
 
 interface User {
   id: string;
@@ -170,7 +172,7 @@ function AuthWrapper() {
 
 
 
-// Learning Interface Component
+/* Learning Interface Component (unused - using external component)
 function LearningInterface({ user, onBack }: { user: User; onBack: () => void }) {
   const [topic, setTopic] = useState('');
   const [data, setData] = useState<PrereqData | null>(null);
@@ -433,7 +435,7 @@ function LearningInterface({ user, onBack }: { user: User; onBack: () => void })
           </div>
         </div>
 
-        {/* Learning Interface Content */}
+        // Learning Interface Content
         <div style={{ background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
           {!data ? (
             <div>
@@ -505,11 +507,15 @@ function LearningInterface({ user, onBack }: { user: User; onBack: () => void })
               {mcqs && (
                 <Quiz
                   mcqs={mcqs}
-                  onSubmit={handleQuizSubmit}
-                  onRestart={handleQuizRestart}
+                  quizId={currentQuizSessionId}
+                  onSubmitQuiz={handleQuizSubmit}
+                  onRestartQuiz={handleQuizRestart}
                   attemptsToday={attemptsToday}
                   canAttempt={canAttempt}
                   quizPassed={quizPassed}
+                  topic={data?.topic || ''}
+                  onLearningPathGenerated={refreshUserData}
+                  onBackToHome={handleBackFromLearning}
                 />
               )}
             </div>
@@ -519,6 +525,7 @@ function LearningInterface({ user, onBack }: { user: User; onBack: () => void })
     </div>
   );
 }
+*/
 
 
 function App() {

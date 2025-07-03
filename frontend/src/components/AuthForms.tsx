@@ -93,7 +93,7 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
   const passwordStatus = passwordChecks.map(c => c.test(formData.password));
 
   return (
-    <div style={{
+    <div className="mobile-modal" style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -106,17 +106,20 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
       zIndex: 1000,
       padding: '20px'
     }}>
-      <div style={{
+      <div className="mobile-modal-content mobile-form" style={{
         backgroundColor: 'white',
         borderRadius: '16px',
         padding: '40px',
         maxWidth: '400px',
         width: '100%',
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        position: 'relative'
+        position: 'relative',
+        maxHeight: '90vh',
+        overflowY: 'auto'
       }}>
         <button
           onClick={onClose}
+          className="mobile-btn"
           style={{
             position: 'absolute',
             top: '15px',
@@ -126,13 +129,16 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
             fontSize: '24px',
             cursor: 'pointer',
             color: '#666',
-            width: '30px',
-            height: '30px',
+            width: '44px',
+            height: '44px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '50%',
-            transition: 'background-color 0.2s'
+            transition: 'background-color 0.2s',
+            touchAction: 'manipulation',
+            minWidth: '44px',
+            minHeight: '44px'
           }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -395,6 +401,144 @@ const AuthForms: React.FC<AuthFormsProps> = ({ onAuthSuccess, onClose }) => {
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+
+          /* Mobile Responsive Styles for Auth Forms */
+          @media (max-width: 479px) {
+            .mobile-modal {
+              padding: 1rem !important;
+              align-items: flex-start !important;
+              padding-top: 2rem !important;
+            }
+
+            .mobile-modal-content {
+              padding: 1.5rem !important;
+              border-radius: 1rem !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              max-height: 85vh !important;
+            }
+
+            .mobile-form h2 {
+              font-size: 1.5rem !important;
+              margin-bottom: 1.5rem !important;
+            }
+
+            .mobile-form input {
+              padding: 1rem !important;
+              font-size: 16px !important; /* Prevents zoom on iOS */
+              border-radius: 0.75rem !important;
+              margin-bottom: 1rem !important;
+            }
+
+            .mobile-form label {
+              font-size: 1rem !important;
+              margin-bottom: 0.5rem !important;
+            }
+
+            .mobile-form button[type="submit"] {
+              padding: 1rem !important;
+              font-size: 1.1rem !important;
+              border-radius: 0.75rem !important;
+              width: 100% !important;
+              margin-top: 0.5rem !important;
+            }
+
+            .mobile-form .error-message {
+              padding: 1rem !important;
+              font-size: 0.9rem !important;
+              border-radius: 0.75rem !important;
+              margin-bottom: 1rem !important;
+            }
+
+            .mobile-form .password-strength {
+              margin-top: 0.75rem !important;
+            }
+
+            .mobile-form .password-strength ul {
+              padding-left: 1rem !important;
+            }
+
+            .mobile-form .password-strength li {
+              font-size: 0.8rem !important;
+              margin-bottom: 0.25rem !important;
+            }
+
+            .mobile-form .toggle-section {
+              margin-top: 1.5rem !important;
+              text-align: center !important;
+            }
+
+            .mobile-form .toggle-section p {
+              font-size: 0.9rem !important;
+              margin-bottom: 0.5rem !important;
+            }
+
+            .mobile-form .toggle-section button {
+              font-size: 1rem !important;
+              padding: 0.5rem 1rem !important;
+              border-radius: 0.5rem !important;
+              background: #f3f4f6 !important;
+              border: 1px solid #d1d5db !important;
+              color: #6366f1 !important;
+              text-decoration: none !important;
+            }
+          }
+
+          @media (min-width: 480px) and (max-width: 767px) {
+            .mobile-modal {
+              padding: 1.5rem !important;
+            }
+
+            .mobile-modal-content {
+              padding: 2rem !important;
+              max-width: 400px !important;
+            }
+
+            .mobile-form input {
+              font-size: 16px !important; /* Prevents zoom on iOS */
+            }
+          }
+
+          /* Touch optimizations for all mobile devices */
+          @media (max-width: 768px) {
+            .mobile-form input,
+            .mobile-form button {
+              touch-action: manipulation;
+              -webkit-tap-highlight-color: transparent;
+            }
+
+            .mobile-form input:focus {
+              outline: none;
+              border-color: #6366f1 !important;
+              box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+            }
+
+            .mobile-form button:active {
+              transform: scale(0.98);
+            }
+
+            .mobile-form button[type="submit"]:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+              transform: none !important;
+            }
+
+            /* Improve scrolling on mobile */
+            .mobile-modal-content {
+              -webkit-overflow-scrolling: touch;
+              overflow-scrolling: touch;
+            }
+
+            /* Better spacing for mobile */
+            .mobile-form > div {
+              margin-bottom: 1rem;
+            }
+
+            .mobile-form > div:last-child {
+              margin-bottom: 0;
+            }
           }
         `}</style>
       </div>

@@ -112,6 +112,32 @@ router.get('/check-admin', async (req: Request, res: Response): Promise<void> =>
   }
 });
 
+// Verify current user's token and role (for debugging)
+router.get('/verify-token', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.json({
+      tokenValid: true,
+      userId: req.userId,
+      userFromToken: req.user,
+      userFromDB: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      },
+      isAdmin: user.role === 'admin'
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // Get user profile with complete data
 router.get('/profile', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {

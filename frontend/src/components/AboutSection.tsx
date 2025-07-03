@@ -99,6 +99,104 @@ const AboutSection: React.FC<AboutSectionProps> = ({ isDarkMode = false }) => {
             </div>
           </div>
           <style>{`
+            /* Mobile First Responsive Design for About Section */
+
+            /* Small Mobile (0-479px) */
+            @media (max-width: 479px) {
+              .about-section-content {
+                padding: 3rem 0 !important;
+              }
+
+              .about-content {
+                gap: 2rem !important;
+                padding: 0 1rem !important;
+              }
+
+              .about-text {
+                text-align: center !important;
+                max-width: 100% !important;
+              }
+
+              .about-text h2 {
+                font-size: 1.75rem !important;
+                margin-bottom: 1rem !important;
+                line-height: 1.2 !important;
+              }
+
+              .about-text p {
+                font-size: 1rem !important;
+                margin-bottom: 1rem !important;
+                line-height: 1.6 !important;
+              }
+
+              .about-image {
+                max-width: 100% !important;
+                align-items: center !important;
+              }
+
+              .about-image img {
+                height: 16rem !important;
+                border-radius: 1rem !important;
+              }
+
+              .about-image > div {
+                bottom: -1.5rem !important;
+                left: 1rem !important;
+                padding: 0.5rem 1rem !important;
+                font-size: 0.875rem !important;
+              }
+
+              .about-image > div span {
+                width: 0.5rem !important;
+                height: 0.5rem !important;
+              }
+            }
+
+            /* Large Mobile (480-767px) */
+            @media (min-width: 480px) and (max-width: 767px) {
+              .about-section-content {
+                padding: 4rem 0 !important;
+              }
+
+              .about-content {
+                gap: 2.5rem !important;
+                padding: 0 1.5rem !important;
+              }
+
+              .about-text {
+                text-align: center !important;
+              }
+
+              .about-text h2 {
+                font-size: 2rem !important;
+              }
+
+              .about-image img {
+                height: 18rem !important;
+              }
+            }
+
+            /* Tablet (768-899px) */
+            @media (min-width: 768px) and (max-width: 899px) {
+              .about-content {
+                gap: 3rem !important;
+              }
+
+              .about-text {
+                text-align: center !important;
+                max-width: 600px !important;
+              }
+
+              .about-text h2 {
+                font-size: 2.25rem !important;
+              }
+
+              .about-image {
+                max-width: 500px !important;
+              }
+            }
+
+            /* Desktop (900px+) */
             @media (min-width: 900px) {
               .about-content {
                 flex-direction: row !important;
@@ -113,6 +211,29 @@ const AboutSection: React.FC<AboutSectionProps> = ({ isDarkMode = false }) => {
               .about-image {
                 width: 50% !important;
                 max-width: 500px !important;
+              }
+            }
+
+            /* Touch optimizations */
+            @media (max-width: 768px) {
+              .about-image {
+                transition: transform 0.2s ease;
+              }
+
+              .about-image:hover {
+                transform: scale(1.02);
+              }
+
+              .about-image:active {
+                transform: scale(0.98);
+              }
+
+              .about-image > div {
+                transition: transform 0.2s ease;
+              }
+
+              .about-image > div:hover {
+                transform: translateY(-2px);
               }
             }
           `}</style>
