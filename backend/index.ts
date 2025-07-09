@@ -7,9 +7,6 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
-// JWT Secret configuration (will be loaded after dotenv.config() below)
-const getJWTSecret = () => process.env.JWT_SECRET || 'changeme';
-
 import prereqRoutes from './src/routes/prerequisites';
 import summaryRoutes from './src/routes/summaryRoute';
 import quizAttempts from './src/routes/quixAttempts';
@@ -29,7 +26,7 @@ const server = createServer(app);
 
 // CORS configuration for production and development
 const allowedOrigins = [
-  
+
   'http://localhost:3000',
   'http://localhost:5173',
   'https://ssmp.onrender.com',
@@ -37,7 +34,7 @@ const allowedOrigins = [
 ];
 
 const io = new Server(server, {
-  cors: {
+  cors: { 
     origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
@@ -84,20 +81,13 @@ app.use('/api/chat', chatRoutes);
 // WebSocket authentication
 io.use((socket: Socket, next) => {
   const token = socket.handshake.auth.token;
-  console.log('WebSocket auth attempt, token:', token ? 'present' : 'missing');
-
-  if (!token) {
-    console.log('WebSocket auth failed: No token provided');
-    return next(new Error('Authentication error'));
-  }
+  if (!token) return next(new Error('Authentication error'));
 
   try {
-    const decoded = jwt.verify(token, getJWTSecret()) as any;
-    console.log('WebSocket auth successful for user:', decoded.id);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
     (socket as any).data = { user: decoded };
     next();
-  } catch (error) {
-    console.log('WebSocket auth failed: Invalid token', error);
+  } catch {
     next(new Error('Authentication error'));
   }
 });
@@ -240,4 +230,3 @@ process.on('SIGINT', () => {
     console.log('Process terminated');
   });
 });
-
